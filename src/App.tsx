@@ -244,6 +244,7 @@ function App() {
           <SafetyPanel safety={safety} route={route} config={effectiveSafetyConfig} />
 
           <MissionCard
+            terrain={terrain}
             start={start}
             goal={goal}
             waypoints={waypoints}
