@@ -13,9 +13,9 @@ const vendor = window as unknown as VendorWindow;
 export const THREE = vendor.THREE as any;
 
 export function assertThreeLoaded(): void {
-  if (!THREE) {
+  if (!THREE || !THREE.OrbitControls) {
     throw new Error(
-      "Three.js vendor script did not load. Serve the app with Vite or python -m http.server.",
+      "Three.js vendor scripts did not load. Serve the app with Vite or python -m http.server.",
     );
   }
 }
