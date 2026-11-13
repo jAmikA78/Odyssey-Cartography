@@ -71,7 +71,7 @@ B and E can proceed in parallel after the scaffold and grid contract exist. D is
 
 ## First-Hour Checklist
 
-1. A creates the Vite app and sets `base: '/Odyssey-Cartography-/'`.
+1. A creates the Vite app and sets `base: '/Odyssey-Cartography/'`.
 2. A adds the GitHub Pages workflow and deploys a blank site.
 3. E writes `src/types.ts` from `plan/architecture.md`.
 4. D starts source downloads and records exact endpoints and formats.

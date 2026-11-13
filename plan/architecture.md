@@ -258,7 +258,7 @@ Current environment has `numpy`, `scipy`, `Pillow`, and `requests`; it does not 
 ## Deployment
 
 - GitHub Actions builds with Vite and publishes the static artifact to GitHub Pages.
-- Vite `base` must be `/Odyssey-Cartography-/`.
+- Vite `base` must be `/Odyssey-Cartography/`.
 - A verifies the production preview under the base path before merge.
 - Only A merges deployment changes to `main`.
 

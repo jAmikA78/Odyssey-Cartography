@@ -24,7 +24,7 @@ Do not change these without explicit user approval and a matching update to the 
 - Product: Odyssey, a Gale Crater traverse planner.
 - Team: 5 workstreams, A–E. A is the integration and merge owner.
 - Stack: Vite + React + TypeScript + Leaflet.
-- Hosting: static GitHub Pages under `/Odyssey-Cartography-/`.
+- Hosting: static GitHub Pages under `/Odyssey-Cartography/`.
 - Runtime: no backend; critical assets served locally.
 - Initial AOI: illustrative Gale boxwork near 4.95°S, 137.45°E, approximately 20 km square.
 - Grid: 256×256, row-major arrays.

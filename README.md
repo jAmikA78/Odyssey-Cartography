@@ -33,7 +33,7 @@ The official challenge wording and judging rubric should be checked before submi
 ## Build
 
 - **Stack:** Vite + React + TypeScript + Leaflet.
-- **Hosting:** static GitHub Pages under `/Odyssey-Cartography-/`.
+- **Hosting:** static GitHub Pages under `/Odyssey-Cartography/`.
 - **Grid:** 256×256 row-major terrain and hazard arrays.
 - **Feature freeze:** Saturday 10:00 Africa/Cairo.
 - **Final submission:** before Saturday 13:00 Africa/Cairo.

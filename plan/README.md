@@ -22,7 +22,7 @@ This directory is the execution source of truth for the Odyssey hackathon build.
 | Product | Odyssey — Gale Crater Marswalk Planner |
 | Team | 5 workstreams: A–E |
 | Stack | Vite + React + TypeScript + Leaflet |
-| Hosting | Static GitHub Pages under `/Odyssey-Cartography-/` |
+| Hosting | Static GitHub Pages under `/Odyssey-Cartography/` |
 | Runtime | No backend; critical assets local |
 | AOI | Illustrative Gale boxwork near 4.95°S, 137.45°E |
 | AOI size | Approximately 20 km square |
