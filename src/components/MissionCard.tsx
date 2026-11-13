@@ -129,11 +129,11 @@ export function MissionCard({
             )}
 
             <p className="panel-note">
-              <strong>Data Credits &amp; Citations:</strong> NASA/JPL/USGS Gale
+              <strong>Data Credits &amp; Caveat:</strong> NASA/JPL/USGS Gale
               Merged DEM (Calef &amp; Parker, 2016), Mars Trek CTX Mosaic, USGS
-              SIM 3292 (Tanaka et al., 2014), MSL RAD baseline reference (Hassler
-              et al., 2014, <em>Science</em>). SIMULATION ONLY — illustrative
-              hackathon estimates, not safety-certified.
+              SIM 3292 (Tanaka et al., 2014). Radiation rate (0.64 mSv/day) is
+              an unverified demo threshold — illustrative hackathon estimates
+              only, not safety-certified.
             </p>
 
             <div className="mission-card-footer-buttons no-print">
