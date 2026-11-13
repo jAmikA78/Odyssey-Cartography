@@ -7,9 +7,9 @@ This directory is the execution source of truth for the Odyssey hackathon build.
 ## Current Status
 
 - Research, solution definition, and documentation: complete.
-- Application scaffold: in progress (builds locally under the Pages base path; not yet deployed).
+- Application scaffold: complete; blank site publicly deployed at <https://jamika78.github.io/Odyssey-Cartography/>.
 - Data pipeline: not started.
-- Public demo: not deployed.
+- Public demo: blank deploy live; full feature demo not implemented.
 - Feature freeze: Saturday 10:00 Africa/Cairo.
 - Final submission: before Saturday 13:00 Africa/Cairo.
 

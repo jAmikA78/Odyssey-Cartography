@@ -40,9 +40,9 @@ The official challenge wording and judging rubric should be checked before submi
 
 ## Demo
 
-Public demo link: **TBD after the Phase 0 GitHub Pages deploy.**
+Public blank deploy: <https://jamika78.github.io/Odyssey-Cartography/>. The map, routing, safety, and POV features are not implemented yet.
 
-The demo must open without a login and must not depend on a local development server.
+The full demo must open without a login and must not depend on a local development server.
 
 ## Development Setup
 

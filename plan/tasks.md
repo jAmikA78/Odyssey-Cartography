@@ -10,7 +10,7 @@ Status values: `planned`, `in progress`, `blocked`, `done`.
 
 | ID | Task | Depends on | Done when | Status |
 | --- | --- | --- | --- | --- |
-| A0 | Scaffold Vite + React + TypeScript, set Pages base, add deploy workflow | — | Blank site is publicly deployed | in progress |
+| A0 | Scaffold Vite + React + TypeScript, set Pages base, add deploy workflow | — | Blank site is publicly deployed | done |
 | A1 | Build app shell and shared state | A0 | Map and panel placeholders render | planned |
 | A2 | Integrate map, route, and safety flow | B1, C1, E1 | Start/end selection produces a route and stats | planned |
 | A3 | Build QA, production preview, and demo rehearsal | A2 | Acceptance checks pass | planned |
