@@ -1,0 +1,434 @@
+{
+ "crs": "same Mars equirectangular CRS as metadata.json; identical 238 x 238 grid, 19.92437 m cells, same bounds and row/col order as elevation.f32",
+ "grid": "238 x 238, identical to elevation.f32 grid (same bounds, 19.924 m cells, rows north-to-south, little-endian float32). Bilinearly resampled from the CRISM 18 m MTRDR grid.",
+ "source_observation": "FRT000058A3 (MRO CRISM targeted observation, 2007-04-22, Ls 223.9 deg, orbit 3453), MTRDR summary-products cube frt000058a3_07_sr165j_mtr3.img, map scale 18 m/pixel. The observation footprint covers the whole patch, but at the albedo-corrected registration the strip's valid-data edge cuts a west/southwest wedge: 55,052 of 56,644 patch cells (97.19%) are measured.",
+ "source_url": "https://pds-geosciences.wustl.edu/mro/mro-m-crism-5-rdr-mptargeted-v1/mrocr_4001/mtrdr/2007/2007_112/frt000058a3/",
+ "citation": "Murchie, S. et al. CRISM on MRO; summary parameter definitions in Viviano-Beck et al. 2014, JGR Planets 119, doi:10.1002/2014JE004627. PDS Geosciences Node dataset MRO-M-CRISM-5-RDR-MPTARGETED-V1.0.",
+ "warning": "These are orbital spectral indices (band strengths), NOT mineral abundances or soil chemistry. Elevated values mark candidate signatures. Dust suppresses signatures. No in-situ (rover) soil measurements exist inside this patch.",
+ "bands": {
+  "BD1300": {
+   "title": "1.3 \u00b5m band depth",
+   "description": "Fe-bearing mineral signature, modified by dust.",
+   "units": "spectral index (unitless ratio/depth)",
+   "file_f32": "data/minerals/min_BD1300.f32",
+   "file_png": "data/minerals/min_BD1300.png",
+   "patch_min": -0.024438977054556207,
+   "patch_max": 0.011142517638503241,
+   "patch_mean": -0.008284087656803996,
+   "png_stretch": [
+    -0.01585757832374519,
+    6.421562941834863e-05
+   ],
+   "coverage_pct": 97.19,
+   "cells_measured": 55052,
+   "cells_filled": 1592,
+   "measured_min": -0.024438977241516113,
+   "measured_max": 0.011142517440021038,
+   "measured_mean": -0.008445682004094124
+  },
+  "BD1400": {
+   "title": "1.4 \u00b5m band depth",
+   "description": "Bound water / OH in minerals. Higher = more hydrated or OH-bearing material.",
+   "units": "spectral index (unitless ratio/depth)",
+   "file_f32": "data/minerals/min_BD1400.f32",
+   "file_png": "data/minerals/min_BD1400.png",
+   "patch_min": -0.004612731303877819,
+   "patch_max": 0.008996625065346105,
+   "patch_mean": 0.0015892969229106698,
+   "png_stretch": [
+    -0.0016246670966953087,
+    0.0052700112854745995
+   ],
+   "coverage_pct": 97.19,
+   "cells_measured": 55052,
+   "cells_filled": 1592,
+   "measured_min": -0.004612731281667948,
+   "measured_max": 0.008996625430881977,
+   "measured_mean": 0.0015967455692589283
+  },
+  "BD1900_2": {
+   "title": "1.9 \u00b5m band depth",
+   "description": "Water molecule absorption. Higher = more hydrated minerals.",
+   "units": "spectral index (unitless ratio/depth)",
+   "file_f32": "data/minerals/min_BD1900_2.f32",
+   "file_png": "data/minerals/min_BD1900_2.png",
+   "patch_min": -0.011709344718595605,
+   "patch_max": 0.006479523199865421,
+   "patch_mean": -0.0026106584730521735,
+   "png_stretch": [
+    -0.007039386826711563,
+    0.0016794865331884973
+   ],
+   "coverage_pct": 97.19,
+   "cells_measured": 55052,
+   "cells_filled": 1592,
+   "measured_min": -0.011709344573318958,
+   "measured_max": 0.00647952314466238,
+   "measured_mean": -0.002629303140565753
+  },
+  "BD2100_2": {
+   "title": "2.1 \u00b5m shifted band",
+   "description": "Monohydrated sulfate signature. Higher = candidate mono-hydrated sulfate.",
+   "units": "spectral index (unitless ratio/depth)",
+   "file_f32": "data/minerals/min_BD2100_2.f32",
+   "file_png": "data/minerals/min_BD2100_2.png",
+   "patch_min": -0.00866680938267728,
+   "patch_max": 0.00893614020853477,
+   "patch_mean": 0.000520837839971112,
+   "png_stretch": [
+    -0.003948555177343085,
+    0.004679431314649562
+   ],
+   "coverage_pct": 97.19,
+   "cells_measured": 55052,
+   "cells_filled": 1592,
+   "measured_min": -0.008666809648275375,
+   "measured_max": 0.008936139754951,
+   "measured_mean": 0.0005952841020189226
+  },
+  "BD2290": {
+   "title": "2.29 \u00b5m band depth",
+   "description": "Fe/Mg phyllosilicate signature.",
+   "units": "spectral index (unitless ratio/depth)",
+   "file_f32": "data/minerals/min_BD2290.f32",
+   "file_png": "data/minerals/min_BD2290.png",
+   "patch_min": -0.007469123901425266,
+   "patch_max": 0.0025761290217224016,
+   "patch_mean": -0.0033628380651628148,
+   "png_stretch": [
+    -0.005452464657052459,
+    -0.0008084358121415947
+   ],
+   "coverage_pct": 97.19,
+   "cells_measured": 55052,
+   "cells_filled": 1592,
+   "measured_min": -0.00746912369504571,
+   "measured_max": 0.0025761290453374386,
+   "measured_mean": -0.003396083367988467
+  },
+  "BD3000": {
+   "title": "3 \u00b5m water band",
+   "description": "Ubiquitous hydration. Higher = more water/OH in the top surface.",
+   "units": "spectral index (unitless ratio/depth)",
+   "file_f32": "data/minerals/min_BD3000.f32",
+   "file_png": "data/minerals/min_BD3000.png",
+   "patch_min": 0.5431195178165261,
+   "patch_max": 0.7029390640085107,
+   "patch_mean": 0.643759487031161,
+   "png_stretch": [
+    0.5877081967861558,
+    0.6815230677905733
+   ],
+   "coverage_pct": 97.19,
+   "cells_measured": 55052,
+   "cells_filled": 1592,
+   "measured_min": 0.543119490146637,
+   "measured_max": 0.7029390931129456,
+   "measured_mean": 0.644809901714325
+  },
+  "BD3100": {
+   "title": "3.1 \u00b5m band depth",
+   "description": "Hydrated silica / adsorbed water signature.",
+   "units": "spectral index (unitless ratio/depth)",
+   "file_f32": "data/minerals/min_BD3100.f32",
+   "file_png": "data/minerals/min_BD3100.png",
+   "patch_min": 0.042943810125262084,
+   "patch_max": 0.12762597853059165,
+   "patch_mean": 0.0839777188019784,
+   "png_stretch": [
+    0.05916794601504578,
+    0.10690202431371805
+   ],
+   "coverage_pct": 97.19,
+   "cells_measured": 55052,
+   "cells_filled": 1592,
+   "measured_min": 0.0429438091814518,
+   "measured_max": 0.127625972032547,
+   "measured_mean": 0.08460012078285217
+  },
+  "BD530_2": {
+   "title": "0.53 \u00b5m band depth",
+   "description": "Ferric oxide signature. Higher = stronger ferric (rust-like) absorption.",
+   "units": "spectral index (unitless ratio/depth)",
+   "file_f32": "data/minerals/min_BD530_2.f32",
+   "file_png": "data/minerals/min_BD530_2.png",
+   "patch_min": 0.17844956927312614,
+   "patch_max": 0.2445116793164689,
+   "patch_mean": 0.21713300555774676,
+   "png_stretch": [
+    0.19435576826282752,
+    0.23472200768086718
+   ],
+   "coverage_pct": 97.19,
+   "cells_measured": 55052,
+   "cells_filled": 1592,
+   "measured_min": 0.1784495711326599,
+   "measured_max": 0.244511678814888,
+   "measured_mean": 0.21716530621051788
+  },
+  "BDI1000IR": {
+   "title": "1 \u00b5m band depth (IR)",
+   "description": "Broad mafic mineral absorption. Higher = more pyroxene/olivine-like 1 \u00b5m band.",
+   "units": "spectral index (unitless ratio/depth)",
+   "file_f32": "data/minerals/min_BDI1000IR.f32",
+   "file_png": "data/minerals/min_BDI1000IR.png",
+   "patch_min": 0.012557543912255558,
+   "patch_max": 0.03216278206623889,
+   "patch_mean": 0.01928325230515104,
+   "png_stretch": [
+    0.016220248095766953,
+    0.024159077294884857
+   ],
+   "coverage_pct": 97.19,
+   "cells_measured": 55052,
+   "cells_filled": 1592,
+   "measured_min": 0.012557543814182281,
+   "measured_max": 0.032162781804800034,
+   "measured_mean": 0.019166484475135803
+  },
+  "CINDEX2": {
+   "title": "Carbonate index (3.4 \u00b5m)",
+   "description": "Higher = candidate carbonate signature.",
+   "units": "spectral index (unitless ratio/depth)",
+   "file_f32": "data/minerals/min_CINDEX2.f32",
+   "file_png": "data/minerals/min_CINDEX2.png",
+   "patch_min": -0.013046722124971186,
+   "patch_max": 0.1504359577483267,
+   "patch_mean": 0.07965950460349791,
+   "png_stretch": [
+    0.028189689017911197,
+    0.11723199004351278
+   ],
+   "coverage_pct": 97.19,
+   "cells_measured": 55052,
+   "cells_filled": 1592,
+   "measured_min": -0.013046721927821636,
+   "measured_max": 0.15043595433235168,
+   "measured_mean": 0.07921747118234634
+  },
+  "D2200": {
+   "title": "2.2 \u00b5m drop",
+   "description": "Al-OH phyllosilicates (e.g. kaolinite). Higher = stronger clay signature.",
+   "units": "spectral index (unitless ratio/depth)",
+   "file_f32": "data/minerals/min_D2200.f32",
+   "file_png": "data/minerals/min_D2200.png",
+   "patch_min": -0.0061359547912182046,
+   "patch_max": 0.008002120601854578,
+   "patch_mean": 0.0008799600764123019,
+   "png_stretch": [
+    -0.002296423032696527,
+    0.00410917727024398
+   ],
+   "coverage_pct": 97.19,
+   "cells_measured": 55052,
+   "cells_filled": 1592,
+   "measured_min": -0.006135954987257719,
+   "measured_max": 0.00800212100148201,
+   "measured_mean": 0.0008562506991438568
+  },
+  "D2300": {
+   "title": "2.3 \u00b5m drop",
+   "description": "Fe/Mg phyllosilicates (e.g. nontronite). Higher = stronger clay signature.",
+   "units": "spectral index (unitless ratio/depth)",
+   "file_f32": "data/minerals/min_D2300.f32",
+   "file_png": "data/minerals/min_D2300.png",
+   "patch_min": -0.01069251414760401,
+   "patch_max": 0.004006644099763724,
+   "patch_mean": -0.003501685376123059,
+   "png_stretch": [
+    -0.007038520498856604,
+    -5.90462410694998e-05
+   ],
+   "coverage_pct": 97.19,
+   "cells_measured": 55052,
+   "cells_filled": 1592,
+   "measured_min": -0.010692514479160309,
+   "measured_max": 0.004006644245237112,
+   "measured_mean": -0.0034882959444075823
+  },
+  "HCPINDEX2": {
+   "title": "High-Ca pyroxene index",
+   "description": "Higher = high-calcium pyroxene (e.g. augite) signature.",
+   "units": "spectral index (unitless ratio/depth)",
+   "file_f32": "data/minerals/min_HCPINDEX2.f32",
+   "file_png": "data/minerals/min_HCPINDEX2.png",
+   "patch_min": -0.03478455597025962,
+   "patch_max": 0.013209529772315053,
+   "patch_mean": -0.010792134117368115,
+   "png_stretch": [
+    -0.017968419712205985,
+    -0.0024015897167611695
+   ],
+   "coverage_pct": 97.19,
+   "cells_measured": 55052,
+   "cells_filled": 1592,
+   "measured_min": -0.034784555435180664,
+   "measured_max": 0.013209530152380466,
+   "measured_mean": -0.010719849728047848
+  },
+  "ICER1_2": {
+   "title": "Water-ice index",
+   "description": "Higher = possible water frost/ice. Near zero here: no surface ice detected.",
+   "units": "spectral index (unitless ratio/depth)",
+   "file_f32": "data/minerals/min_ICER1_2.f32",
+   "file_png": "data/minerals/min_ICER1_2.png",
+   "patch_min": -0.005353811035350481,
+   "patch_max": 0.04478415748260961,
+   "patch_mean": 0.016899679289966385,
+   "png_stretch": [
+    0.011517237735854996,
+    0.02209950504445999
+   ],
+   "coverage_pct": 97.19,
+   "cells_measured": 55052,
+   "cells_filled": 1592,
+   "measured_min": -0.0053538111969828606,
+   "measured_max": 0.04478415846824646,
+   "measured_mean": 0.016814768314361572
+  },
+  "LCPINDEX2": {
+   "title": "Low-Ca pyroxene index",
+   "description": "Higher = low-calcium pyroxene (e.g. orthopyroxene) signature.",
+   "units": "spectral index (unitless ratio/depth)",
+   "file_f32": "data/minerals/min_LCPINDEX2.f32",
+   "file_png": "data/minerals/min_LCPINDEX2.png",
+   "patch_min": -0.03305104190403687,
+   "patch_max": 0.0014938302175621753,
+   "patch_mean": -0.012745058124571385,
+   "png_stretch": [
+    -0.027400282399022605,
+    -0.00494085472540325
+   ],
+   "coverage_pct": 97.19,
+   "cells_measured": 55052,
+   "cells_filled": 1592,
+   "measured_min": -0.03305104374885559,
+   "measured_max": 0.0014938302338123322,
+   "measured_mean": -0.012332359328866005
+  },
+  "MIN2295_2480": {
+   "title": "Carbonate parameter A",
+   "description": "Higher = candidate carbonate signature. Negative here = not detected.",
+   "units": "spectral index (unitless ratio/depth)",
+   "file_f32": "data/minerals/min_MIN2295_2480.f32",
+   "file_png": "data/minerals/min_MIN2295_2480.png",
+   "patch_min": -0.020389820298184595,
+   "patch_max": -0.0037354627023216667,
+   "patch_mean": -0.011307767616389732,
+   "png_stretch": [
+    -0.015421179154394843,
+    -0.00735900674323542
+   ],
+   "coverage_pct": 97.19,
+   "cells_measured": 55052,
+   "cells_filled": 1592,
+   "measured_min": -0.020389819517731667,
+   "measured_max": -0.0037354626692831516,
+   "measured_mean": -0.01136550959199667
+  },
+  "MIN2345_2537": {
+   "title": "Carbonate parameter B",
+   "description": "Higher = candidate carbonate signature.",
+   "units": "spectral index (unitless ratio/depth)",
+   "file_f32": "data/minerals/min_MIN2345_2537.f32",
+   "file_png": "data/minerals/min_MIN2345_2537.png",
+   "patch_min": -0.015317940665151065,
+   "patch_max": 0.002628770130134238,
+   "patch_mean": -0.006059065441142212,
+   "png_stretch": [
+    -0.011460265563226268,
+    -0.0011666399955282559
+   ],
+   "coverage_pct": 97.19,
+   "cells_measured": 55052,
+   "cells_filled": 1592,
+   "measured_min": -0.015317941084504128,
+   "measured_max": 0.0026287701912224293,
+   "measured_mean": -0.0059118918143212795
+  },
+  "OLINDEX3": {
+   "title": "Olivine index",
+   "description": "Higher = stronger olivine signature (fresh basaltic sand/rock).",
+   "units": "spectral index (unitless ratio/depth)",
+   "file_f32": "data/minerals/min_OLINDEX3.f32",
+   "file_png": "data/minerals/min_OLINDEX3.png",
+   "patch_min": -0.016993077997150146,
+   "patch_max": 0.12734915357356824,
+   "patch_mean": 0.041672074818886316,
+   "png_stretch": [
+    0.021540518326781912,
+    0.06329299327088239
+   ],
+   "coverage_pct": 97.19,
+   "cells_measured": 55052,
+   "cells_filled": 1592,
+   "measured_min": -0.016993077471852303,
+   "measured_max": 0.1273491531610489,
+   "measured_mean": 0.041356585919857025
+  },
+  "R770": {
+   "title": "0.77 \u00b5m reflectance",
+   "description": "Surface brightness (albedo) at 0.77 \u00b5m. Higher = brighter, often dustier.",
+   "units": "spectral index (unitless ratio/depth)",
+   "file_f32": "data/minerals/min_R770.f32",
+   "file_png": "data/minerals/min_R770.png",
+   "patch_min": 0.23311664755753447,
+   "patch_max": 0.3375310013155347,
+   "patch_mean": 0.2877403558639549,
+   "png_stretch": [
+    0.24634894213607486,
+    0.3208000743892371
+   ],
+   "coverage_pct": 97.19,
+   "cells_measured": 55052,
+   "cells_filled": 1592,
+   "measured_min": 0.23311664164066315,
+   "measured_max": 0.3375310003757477,
+   "measured_mean": 0.28786221146583557
+  },
+  "RBR": {
+   "title": "Red/blue ratio (770/440 nm)",
+   "description": "Ferric iron slope. Higher = redder, more oxidized dust coating.",
+   "units": "spectral index (unitless ratio/depth)",
+   "file_f32": "data/minerals/min_RBR.f32",
+   "file_png": "data/minerals/min_RBR.png",
+   "patch_min": 3.837345058900188,
+   "patch_max": 5.149459987364489,
+   "patch_mean": 4.4769147231182345,
+   "png_stretch": [
+    3.9981829302407865,
+    4.909169669070068
+   ],
+   "coverage_pct": 97.19,
+   "cells_measured": 55052,
+   "cells_filled": 1592,
+   "measured_min": 3.8373451232910156,
+   "measured_max": 5.1494598388671875,
+   "measured_mean": 4.481518745422363
+  },
+  "SINDEX2": {
+   "title": "Sulfate index (2.1-2.4 \u00b5m slope)",
+   "description": "Higher = candidate sulfate signature.",
+   "units": "spectral index (unitless ratio/depth)",
+   "file_f32": "data/minerals/min_SINDEX2.f32",
+   "file_png": "data/minerals/min_SINDEX2.png",
+   "patch_min": -0.003568454754815264,
+   "patch_max": 0.015263068963021004,
+   "patch_mean": 0.005618197139269659,
+   "png_stretch": [
+    0.0012946460599352954,
+    0.009833718033710574
+   ],
+   "coverage_pct": 97.19,
+   "cells_measured": 55052,
+   "cells_filled": 1592,
+   "measured_min": -0.003568454645574093,
+   "measured_max": 0.015263069421052933,
+   "measured_mean": 0.005601698067039251
+  }
+ },
+ "registration": "CRISM grid co-registered to the CTX basemap by albedo pattern matching (R770 vs CTX, Pearson r=0.67, unique match); the MTRDR label corner was found ~0.68 km west and ~0.11 km north of its image content (2007-era map control). Applied offset: +38 columns, +6 rows at 18 m. Residual registration error estimated < 40 m.",
+ "coverage": "CRISM measures 55,052 of 56,644 patch cells (97.19%). A diagonal wedge of 1,592 cells (2.81%) at the west/southwest edge falls outside the observation strip at the corrected registration. Shipped f32 rasters contain no NaN or sentinel values: the missing cells are gap-filled from nearest measured values (smoothed by resampling). minerals_mask.f32 (float32, 1.0 = measured, 0.0 = gap-filled) and minerals_mask.png (white = measured) mark exactly which cells are real. patch_min/patch_max/patch_mean are computed over the full grid including filled cells; measured_min/measured_max/measured_mean are computed over measured cells only.",
+ "mask_f32": "data/minerals/minerals_mask.f32",
+ "mask_png": "data/minerals/minerals_mask.png"
+}

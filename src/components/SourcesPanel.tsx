@@ -18,8 +18,17 @@ export function SourcesPanel() {
           visual context only.
         </li>
         <li>
-          Geology: USGS SIM3292 1:20M regional units; present in the pack but
-          not drawn in this view.
+          Minerals: MRO CRISM MTRDR FRT000058A3 (2007), 21 spectral summary
+          indices at 18 m, co-registered to the imagery. Candidate signatures,
+          not abundances or soil chemistry; no in-situ soil measurements exist
+          inside this patch. 97.19% of patch cells (55,052 of 56,644) hold
+          real measured values; 1,592 west/southwest wedge cells are
+          gap-filled from nearest measured values, marked in
+          minerals_mask.f32 and flagged by the hover readout.
+        </li>
+        <li>
+          Geology: USGS SIM3292 1:20M regional units; one unit (Htu) covers the
+          whole patch, drawn as a toggleable boundary overlay.
         </li>
         <li>3D: Three.js r128, MIT license, vendored locally.</li>
         <li>
@@ -58,6 +67,11 @@ export function SourcesPanel() {
           <li>Waypoints and example route are synthetic demo data.</li>
           <li>20 m screening cannot detect rover-scale obstacles.</li>
           <li>Slope-only model; no thermal, dust, or storm-shelter model.</li>
+          <li>
+            Mineral layers are one 2007 orbital snapshot; dust suppresses
+            signatures and values need literature thresholds before any
+            detection claim.
+          </li>
           <li>Dose and suit values are unverified scenario assumptions.</li>
         </ul>
       </details>
