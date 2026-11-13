@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { CaveatBanner } from "./components/CaveatBanner";
+import { Legend } from "./components/Legend";
+import { MissionCard } from "./components/MissionCard";
+import { PovGallery } from "./components/PovGallery";
 import { RoutePanel } from "./components/RoutePanel";
 import { SafetyPanel } from "./components/SafetyPanel";
 import { SourcesPanel } from "./components/SourcesPanel";
@@ -18,6 +21,7 @@ import { loadGaleWaypoints } from "./lib/waypoints";
 import type {
   GaleTerrain,
   GaleWaypoint,
+  GeologyInfo,
   SafetyConfig,
   TerrainSurface,
 } from "./types";
@@ -26,6 +30,7 @@ function App() {
   const [terrain, setTerrain] = useState<GaleTerrain | null>(null);
   const [waypoints, setWaypoints] = useState<GaleWaypoint[]>([]);
   const [safetyConfig, setSafetyConfig] = useState<SafetyConfig>(DEFAULT_SAFETY);
+  const [geologyInfo, setGeologyInfo] = useState<GeologyInfo | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const [surface, setSurface] = useState<TerrainSurface>("ctx");
@@ -85,15 +90,19 @@ function App() {
     };
   }, []);
 
-  const route = useMemo(() => {
-    if (!terrain || !start || !goal) return null;
-    return planRoute(terrain, start, goal, { maxSlopeDeg });
-  }, [terrain, start, goal, maxSlopeDeg]);
-
   const effectiveSafetyConfig = useMemo(
     () => ({ ...safetyConfig, maxSlopeDeg }),
     [safetyConfig, maxSlopeDeg],
   );
+
+  const route = useMemo(() => {
+    if (!terrain || !start || !goal) return null;
+    return planRoute(terrain, start, goal, {
+      maxSlopeDeg,
+      safetyConfig: effectiveSafetyConfig,
+    });
+  }, [terrain, start, goal, maxSlopeDeg, effectiveSafetyConfig]);
+
   const safety = useMemo(
     () => (route ? evaluateSafety(route, effectiveSafetyConfig) : null),
     [route, effectiveSafetyConfig],
@@ -179,6 +188,7 @@ function App() {
                 onPick={handlePick}
                 onHover={setHoverCell}
                 onWaypointSelect={handleWaypointSelect}
+                onGeologyLoaded={setGeologyInfo}
               />
               <TerrainControls
                 terrain={terrain}
@@ -189,6 +199,12 @@ function App() {
                 onResetView={() => setResetViewKey((key) => key + 1)}
                 hoverCell={hoverCell}
                 maxSlopeDeg={maxSlopeDeg}
+                geologyInfo={geologyInfo}
+              />
+              <Legend
+                surface={surface}
+                maxSlopeDeg={maxSlopeDeg}
+                geologyInfo={geologyInfo}
               />
             </>
           ) : loadError ? (
@@ -226,6 +242,17 @@ function App() {
           />
 
           <SafetyPanel safety={safety} route={route} config={effectiveSafetyConfig} />
+
+          <MissionCard
+            start={start}
+            goal={goal}
+            waypoints={waypoints}
+            route={route}
+            safety={safety}
+            config={effectiveSafetyConfig}
+            surface={surface}
+            geologyInfo={geologyInfo}
+          />
 
           <section className="panel" aria-labelledby="waypoints-title">
             <div className="panel-heading">
@@ -266,6 +293,8 @@ function App() {
             ) : null}
           </section>
 
+          <PovGallery />
+
           <SourcesPanel />
         </aside>
       </main>
@@ -274,7 +303,8 @@ function App() {
         <p>
           Illustrative hackathon prototype. Not operational mission planning.
           Sources and demo assumptions are listed in the panels and local source
-          notes.
+          notes. AI tools were used for planning and code assistance; all claims
+          and numbers remain the team&apos;s responsibility to verify.
         </p>
       </footer>
     </div>

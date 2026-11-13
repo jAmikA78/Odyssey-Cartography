@@ -1,4 +1,4 @@
-import type { GaleTerrain, TerrainSurface } from "../types";
+import type { GaleTerrain, GeologyInfo, TerrainSurface } from "../types";
 import { cellLabel, type Cell } from "../lib/geo";
 
 interface TerrainControlsProps {
@@ -10,18 +10,21 @@ interface TerrainControlsProps {
   onResetView: () => void;
   hoverCell: Cell | null;
   maxSlopeDeg: number;
+  geologyInfo: GeologyInfo | null;
 }
 
 const SURFACES: Array<{ id: TerrainSurface; label: string }> = [
   { id: "ctx", label: "CTX" },
   { id: "hillshade", label: "Hillshade" },
   { id: "slope", label: "Slope" },
+  { id: "geology", label: "Geology" },
 ];
 
 const SURFACE_NOTES: Record<TerrainSurface, string> = {
   ctx: "CTX mosaic · visual context only",
   hillshade: "Hillshade · sun azimuth 315°, altitude 45°",
   slope: "Slope degrees · 0–45° display clamp",
+  geology: "USGS SIM 3292 · 1:20M regional geologic map (broad context)",
 };
 
 export function TerrainControls({
@@ -33,6 +36,7 @@ export function TerrainControls({
   onResetView,
   hoverCell,
   maxSlopeDeg,
+  geologyInfo,
 }: TerrainControlsProps) {
   const index = hoverCell
     ? hoverCell.row * terrain.meta.width + hoverCell.col
@@ -57,7 +61,11 @@ export function TerrainControls({
             </button>
           ))}
         </div>
-        <p className="control-note">{SURFACE_NOTES[surface]}</p>
+        <p className="control-note">
+          {surface === "geology" && geologyInfo
+            ? `USGS SIM 3292 · Unit ${geologyInfo.unitCode} (${geologyInfo.unitName})`
+            : SURFACE_NOTES[surface]}
+        </p>
       </div>
 
       <div className="control-block">
@@ -106,8 +114,8 @@ export function TerrainControls({
         <p className="control-note">
           {Math.round(terrain.minElevation)} to{" "}
           {Math.round(terrain.maxElevation)} m ·{" "}
-          {((terrain.meta.width - 1) * terrain.meta.metersPerCell / 1000).toFixed(2)} km
-          across
+          {(((terrain.meta.width - 1) * terrain.meta.metersPerCell) / 1000).toFixed(2)}{" "}
+          km across
         </p>
       </div>
     </div>

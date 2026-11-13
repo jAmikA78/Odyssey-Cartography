@@ -12,6 +12,7 @@ export const SURFACE_TEXTURES: Record<TerrainSurface, string> = {
   ctx: "data/gale/data/texture_ctx.jpg",
   hillshade: "data/gale/data/hillshade.png",
   slope: "data/gale/data/slope_preview.png",
+  geology: "data/gale/data/geology.geojson",
 };
 
 async function fetchChecked(
