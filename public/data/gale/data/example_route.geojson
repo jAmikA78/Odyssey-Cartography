@@ -1,0 +1,137 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Synthetic example route",
+        "status": "DEMO ONLY: not Curiosity telemetry, not evaluated for astronaut safety"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            137.38201761051005,
+            -4.782008736467611,
+            -3753.718505859375
+          ],
+          [
+            137.39042101473663,
+            -4.7904121406942055,
+            -3709.474365234375
+          ],
+          [
+            137.40050509980856,
+            -4.797134864075481,
+            -3519.3740234375
+          ],
+          [
+            137.41058918488048,
+            -4.807218949147395,
+            -3385.12841796875
+          ],
+          [
+            137.41731190826175,
+            -4.81730303421931,
+            -3427.098388671875
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Demo waypoint 1",
+        "row": 65,
+        "col": 65,
+        "elevation_m": -3753.718505859375,
+        "slope_deg": 22.190452575683594,
+        "synthetic": true
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.38201761051005,
+          -4.782008736467611,
+          -3753.718505859375
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Demo waypoint 2",
+        "row": 90,
+        "col": 90,
+        "elevation_m": -3709.474365234375,
+        "slope_deg": 4.154774188995361,
+        "synthetic": true
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.39042101473663,
+          -4.7904121406942055,
+          -3709.474365234375
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Demo waypoint 3",
+        "row": 110,
+        "col": 120,
+        "elevation_m": -3519.3740234375,
+        "slope_deg": 18.60826301574707,
+        "synthetic": true
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.40050509980856,
+          -4.797134864075481,
+          -3519.3740234375
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Demo waypoint 4",
+        "row": 140,
+        "col": 150,
+        "elevation_m": -3385.12841796875,
+        "slope_deg": 7.029148578643799,
+        "synthetic": true
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.41058918488048,
+          -4.807218949147395,
+          -3385.12841796875
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Demo waypoint 5",
+        "row": 170,
+        "col": 170,
+        "elevation_m": -3427.098388671875,
+        "slope_deg": 11.715957641601562,
+        "synthetic": true
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.41731190826175,
+          -4.81730303421931,
+          -3427.098388671875
+        ]
+      }
+    }
+  ]
+}

@@ -14,3 +14,4 @@ dist/
 *.local
 __pycache__/
 *.pyc
+gale-3d-offline.zip
