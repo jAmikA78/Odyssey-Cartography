@@ -71,3 +71,85 @@ export interface SafetyConfig {
   sources: string[];
   notes: string[];
 }
+
+export interface GalePatchMetadata {
+  title: string;
+  prepared: string;
+  bounds_lonlat_deg: [number, number, number, number];
+  width: number;
+  height: number;
+  cell_size_m: [number, number];
+  extent_projected_m: [number, number, number, number];
+  affine_gdal: [number, number, number, number, number, number];
+  crs_wkt: string;
+  crs_proj4: string;
+  mars_radius_m: number;
+  vertical_units: string;
+  min_elevation_m: number;
+  max_elevation_m: number;
+  grid_order: string;
+  nodata_present: boolean;
+  elevation_source: string;
+  resolution_note: string;
+  slope_method: string;
+  hillshade_method: {
+    azimuth_deg_clockwise_from_north: number;
+    sun_altitude_deg: number;
+    range: [number, number];
+  };
+  texture: {
+    bounds_lonlat: [number, number, number, number];
+    width: number;
+    height: number;
+    zoom: number;
+    sources: Array<{ url: string; bytes: number }>;
+  };
+  route: string;
+  geology_note: string;
+  boxwork_note: string;
+}
+
+export interface GaleTerrain {
+  meta: GridMeta;
+  patch: GalePatchMetadata;
+  elevation: Float32Array;
+  slope: Float32Array;
+  noGo: Uint8Array;
+  minElevation: number;
+  maxElevation: number;
+}
+
+export interface GaleWaypoint extends Waypoint {
+  name: string;
+  row: number;
+  col: number;
+  elevationM: number;
+  slopeDeg: number;
+  synthetic: boolean;
+}
+
+export interface GaleRouteResult extends RouteResult {
+  start: RoutePoint;
+  goal: RoutePoint;
+  elevationGainM: number;
+  elevationLossM: number;
+  steepFraction: number;
+}
+
+export type SafetyStatus = "normal" | "caution" | "blocked";
+
+export interface SafetyEvaluation {
+  status: SafetyStatus;
+  doseMsV: number;
+  walkHours: number;
+  requiredSuitHours: number;
+  warnings: string[];
+  assumptions: string[];
+}
+
+export type TerrainSurface = "ctx" | "hillshade" | "slope";
+
+export interface TerrainPick {
+  row: number;
+  col: number;
+}
