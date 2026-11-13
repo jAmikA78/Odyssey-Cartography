@@ -1,0 +1,105 @@
+{
+  "title": "Gale northwest Mount Sharp terrain demo patch",
+  "prepared": "2026-11-13",
+  "bounds_lonlat_deg": [
+    137.36000069143637,
+    -4.839992225631115,
+    137.44000109967354,
+    -4.759991817393932
+  ],
+  "longitude_convention": "east-positive, -180 to 180",
+  "latitude_convention": "planetocentric north-positive",
+  "width": 238,
+  "height": 238,
+  "cell_size_m": [
+    19.92436974789916,
+    19.92436974789916
+  ],
+  "extent_projected_m": [
+    8141972.492786024,
+    -286889.075189438,
+    8146714.492786024,
+    -282147.075189438
+  ],
+  "affine_gdal": [
+    8141972.492786024,
+    19.92436974789916,
+    0.0,
+    -282147.075189438,
+    0.0,
+    -19.92436974789916
+  ],
+  "crs_wkt": "PROJCS[\"Mars_Equirectangular_clon0\",GEOGCS[\"GCS_Mars_2000_Sphere\",DATUM[\"Mars_2000_(Sphere)\",SPHEROID[\"Mars_2000_Sphere_IAU_IAG\",3396190,0]],PRIMEM[\"Reference_Meridian\",0],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]]],PROJECTION[\"Equirectangular\"],PARAMETER[\"standard_parallel_1\",0],PARAMETER[\"central_meridian\",0],PARAMETER[\"false_easting\",0],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH]]",
+  "crs_proj4": "+proj=eqc +lat_ts=0 +lat_0=0 +lon_0=0 +x_0=0 +y_0=0 +R=3396190 +units=m +no_defs=True",
+  "mars_radius_m": 3396190.0,
+  "vertical_units": "meters above Mars areoid (source datum); not Earth sea level",
+  "min_elevation_m": -4066.28515625,
+  "max_elevation_m": -3094.73388671875,
+  "grid_order": "row-major, rows north to south, columns west to east; binary little-endian float32; cell centers",
+  "elevation_binary": "elevation.f32",
+  "slope_binary": "slope.f32",
+  "nodata_present": false,
+  "elevation_source": "https://asc-pds-services.s3.us-west-2.amazonaws.com/mosaic/Mars/MSL/MSL_Gale_DEM_Mosaic_1m_v3.tif",
+  "resolution_note": "20m resampled grid from merged DEM with spatially variable HRSC/CTX/HiRISE/MOLA support, not uniform 1m accuracy",
+  "texture": {
+    "bounds_lonlat": [
+      137.36000069143637,
+      -4.839992225631115,
+      137.44000109967354,
+      -4.759991817393932
+    ],
+    "width": 466,
+    "height": 466,
+    "zoom": 12,
+    "sources": [
+      {
+        "url": "https://trek.nasa.gov/tiles/Mars/EQ/Gale_CTX_BlockAdj_dd/1.0.0/default/default028mm/12/2156/7221.png",
+        "bytes": 48439
+      },
+      {
+        "url": "https://trek.nasa.gov/tiles/Mars/EQ/Gale_CTX_BlockAdj_dd/1.0.0/default/default028mm/12/2156/7222.png",
+        "bytes": 47988
+      },
+      {
+        "url": "https://trek.nasa.gov/tiles/Mars/EQ/Gale_CTX_BlockAdj_dd/1.0.0/default/default028mm/12/2156/7223.png",
+        "bytes": 46012
+      },
+      {
+        "url": "https://trek.nasa.gov/tiles/Mars/EQ/Gale_CTX_BlockAdj_dd/1.0.0/default/default028mm/12/2157/7221.png",
+        "bytes": 47969
+      },
+      {
+        "url": "https://trek.nasa.gov/tiles/Mars/EQ/Gale_CTX_BlockAdj_dd/1.0.0/default/default028mm/12/2157/7222.png",
+        "bytes": 45880
+      },
+      {
+        "url": "https://trek.nasa.gov/tiles/Mars/EQ/Gale_CTX_BlockAdj_dd/1.0.0/default/default028mm/12/2157/7223.png",
+        "bytes": 48357
+      },
+      {
+        "url": "https://trek.nasa.gov/tiles/Mars/EQ/Gale_CTX_BlockAdj_dd/1.0.0/default/default028mm/12/2158/7221.png",
+        "bytes": 47469
+      },
+      {
+        "url": "https://trek.nasa.gov/tiles/Mars/EQ/Gale_CTX_BlockAdj_dd/1.0.0/default/default028mm/12/2158/7222.png",
+        "bytes": 50038
+      },
+      {
+        "url": "https://trek.nasa.gov/tiles/Mars/EQ/Gale_CTX_BlockAdj_dd/1.0.0/default/default028mm/12/2158/7223.png",
+        "bytes": 56530
+      }
+    ]
+  },
+  "slope_method": "atan(hypot(dz/dx,dz/dsouth)), gradient in meters; one-sided at edges; degrees",
+  "hillshade_method": {
+    "azimuth_deg_clockwise_from_north": 315,
+    "sun_altitude_deg": 45,
+    "range": [
+      0,
+      1
+    ]
+  },
+  "route": "Synthetic example only, not actual rover positions and not safe/optimal route",
+  "geology_note": "USGS SIM3292 1:20M regional units, clipped to patch; not high-resolution hazards",
+  "boxwork_note": "This patch has NOT been verified as the boxwork location; chosen to reuse a valid compact DEM subset."
+}

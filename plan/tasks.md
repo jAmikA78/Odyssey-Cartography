@@ -2,7 +2,7 @@
 
 Last updated: 2026-11-13
 
-Status values: `planned`, `in progress`, `blocked`, `done`.
+Status values: `planned`, `in progress`, `blocked`, `done`, `deferred`.
 
 ## Workstreams
 
@@ -11,131 +11,121 @@ Status values: `planned`, `in progress`, `blocked`, `done`.
 | ID | Task | Depends on | Done when | Status |
 | --- | --- | --- | --- | --- |
 | A0 | Scaffold Vite + React + TypeScript, set Pages base, add deploy workflow | — | Blank site is publicly deployed | done |
-| A1 | Build app shell and shared state | A0 | Map and panel placeholders render | planned |
-| A2 | Integrate map, route, and safety flow | B1, C1, E1 | Start/end selection produces a route and stats | planned |
-| A3 | Build QA, production preview, and demo rehearsal | A2 | Acceptance checks pass | planned |
-| A4 | Final merge and release candidate | A3 | Freeze candidate is deployed | planned |
+| A1 | Build app shell and shared state | A0 | Terrain, route, safety, and waypoint panels render | done |
+| A2 | Integrate terrain, route, and safety flow | B1, C1, E1, D0 | Start/end selection produces a route and stats | done |
+| A3 | QA, production preview, offline check, and demo rehearsal | A2 | Acceptance checks pass | in progress |
+| A4 | Final merge and release candidate | A3 | Freeze candidate is deployed from `main` | pending |
 
 ### B — Map, Layers, Coordinates
 
 | ID | Task | Depends on | Done when | Status |
 | --- | --- | --- | --- | --- |
-| B0 | Spike Leaflet CRS and local image overlay | A0 | Local image is registered and clicks map to grid | planned |
-| B1 | Implement CTX, MOLA, THEMIS overlays and layer control | B0, D1 | Three layers toggle at identical bounds | planned |
-| B2 | Add waypoint selection, markers, and route rendering | B1, E1 | User can select points and see the route | planned |
-| B3 | Add legend, attribution, and mobile map behavior | B2 | Map works at 390 px and desktop | planned |
+| B0 | Choose map CRS and registration | D0 | AOI, grid, and conversion rules documented | done; replaced by the 3D Three.js view |
+| B1 | Load CTX, hillshade, and slope surfaces at matching bounds | B0 | Three surfaces switch without misregistration | done |
+| B2 | Implement hover, click, and waypoint picking | B1 | Cursor readout and cell selection work | done |
+| B3 | Add north arrow, scale bar, exaggeration, and reset | B1 | Controls change the scene and reset reliably | done |
+| B4 | Revive a Leaflet 2D layer view | B1 | 2D layer view matches the 3D registration | deferred |
 
-### C — Panels, POV, Mission Card
-
-| ID | Task | Depends on | Done when | Status |
-| --- | --- | --- | --- | --- |
-| C0 | Build responsive app layout and panel shell | A0 | Layout works at desktop and 390 px | planned |
-| C1 | Build route and safety panels | E2 | Stats and warnings update with the route | planned |
-| C2 | Build POV modal and printable mission card | D2, C1 | POV opens and card prints cleanly | planned |
-| C3 | Visual QA and responsive polish | C2 | No overflow, clipped text, or broken controls | planned |
-
-### D — Data and Assets
+### C — Panels, Responsive UI
 
 | ID | Task | Depends on | Done when | Status |
 | --- | --- | --- | --- | --- |
-| D0 | Export or download CTX, MOLA, THEMIS, and optional geology assets | — | Source assets are cached locally | planned |
-| D1 | Build 256×256 grid and local layer images | D0 | JSON and images validate against contracts | planned |
-| D2 | Prepare waypoints and at least three Gale POV images | D0 | Assets are local with credits and source URLs | planned |
-| D3 | Document attribution, resolution, and fallback behavior | D1, D2 | Credits are visible and fallback is tested | planned |
+| C0 | Route, safety, and waypoint panel shells | A1 | Panels render with real data | done |
+| C1 | Wire route and safety results into panels | E1 | Distance, time, slope, dose, and warnings match contracts | done |
+| C2 | POV image modal | D2 | Three Gale POV images open with credits | deferred |
+| C3 | Responsive 390 px layout and caveats | C1 | No blocking overflow; caveats visible | done |
+| C4 | Printable mission card | C1 | Card previews or prints with route and sources | deferred |
 
-### E — Logic, Tests, Content
-
-| ID | Task | Depends on | Done when | Status |
-| --- | --- | --- | --- | --- |
-| E0 | Freeze types and add pure-function test scaffold | A0 | Shared contracts compile and tests run | planned |
-| E1 | Implement geo conversion, hazard, and A* | E0, D1 | Route test passes and returns documented stats | planned |
-| E2 | Implement safety calculations and warnings | E1 | Dose, suit, slope, and duration warnings work | planned |
-| E3 | Verify content, numbers, and source labels | E2 | UI and docs use the same values and caveats | planned |
-
-### S — Submission
+### D — Data Acquisition, Preprocessing, Credits
 
 | ID | Task | Depends on | Done when | Status |
 | --- | --- | --- | --- | --- |
-| S0 | Write and rehearse the 3-minute demo | A3 | Demo runs without dead air or failed links | planned |
-| S1 | Produce the deck and optional 30-second video | S0 | Files are exported and reviewed | planned |
-| S2 | Submit form, links, credits, and AI disclosure | S1 | Submission confirmed before 13:00 | planned |
+| D0 | Acquire and verify the offline terrain pack | — | Metadata, rasters, textures, and checksums pass | done |
+| D1 | Derive hillshade and slope; register CTX | D0 | Surfaces share the 238×238 AOI | done |
+| D2 | Fetch and cache MSL POV images | D0 | Three local images with captions and credits | deferred |
+| D3 | Source notes and attribution | D0 | `SOURCES.md`, UI sources, and docs agree | done |
+| D4 | Full 20 km AOI and MOLA/THEMIS pipeline | D1 | Deferred original pipeline is implemented | deferred |
+
+### E — A*, Hazard, Safety Logic, Tests, Content Accuracy
+
+| ID | Task | Depends on | Done when | Status |
+| --- | --- | --- | --- | --- |
+| E0 | Freeze contracts in `src/types.ts` | — | Terrain, route, waypoint, and safety types compile | done |
+| E1 | Implement A* on the slope grid | D1, E0 | Route avoids >20° cells and returns stats | done |
+| E2 | Implement safety and warning evaluation | E1 | Dose, suit-hours, slope, duration, and warnings are correct | done |
+| E3 | Verify blocked cases and edge conditions | E1 | Start no-go, destination no-go, and no-path cases are handled | done |
+| E4 | Automated unit tests and CI | E1, E2 | Tests run in CI and cover the contracts | deferred |
+
+### S — Submission and Evidence
+
+| ID | Task | Depends on | Done when | Status |
+| --- | --- | --- | --- | --- |
+| S0 | Verify official challenge wording and rubric | — | Requirements mapped with links | pending |
+| S1 | Record a fallback demo video | A3 | Video works without network | pending |
+| S2 | Final submission form, links, and AI disclosure | A4 | Submitted before deadline | pending |
 
 ## Critical Path
 
-```text
-A0 -> D0 -> D1 -> E1 -> A2 -> C1 -> C2 -> A3 -> freeze -> submission
-          \-> B0 -> B1 -/
-```
+`A0 → D0 → E1 → A2 → C1 → A3 → A4 → S2`
 
-B and E can proceed in parallel after the scaffold and grid contract exist. D is the data blocker; if D0 slips, the fallback is a pre-baked local dataset with three layers and three waypoints.
+The offline pack and the A* implementation are complete. The remaining path is final QA, documentation reconciliation, merge/deploy, and submission. POV imagery and the mission card are cut and do not block the critical path.
 
-## First-Hour Checklist
+## Completed Foundation
 
-1. A creates the Vite app and sets `base: '/Odyssey-Cartography/'`.
-2. A adds the GitHub Pages workflow and deploys a blank site.
-3. E writes `src/types.ts` from `plan/architecture.md`.
-4. D starts source downloads and records exact endpoints and formats.
-5. B spikes `L.CRS.EPSG4326` with a local test image overlay.
-6. C builds the responsive shell with placeholder panels.
-7. Everyone confirms they can run the blank site locally.
+- [x] Repository, Pages base, deploy workflow, and blank public deploy.
+- [x] Offline pack extracted and checksummed.
+- [x] React app shell and local asset loading.
+- [x] Three.js 3D terrain and three surfaces.
+- [x] Coordinate helpers for cell, lat/lon, and scene.
+- [x] A* route with 20° default and adjustable limit.
+- [x] Safety evaluation and warnings.
+- [x] Synthetic waypoints and blocked-start example.
+- [x] Desktop and 390 px responsive layout.
+- [x] Local sources and persistent caveats.
 
 ## Cut Lines
 
-Cut in this order if time is short:
+If time runs short, cut in this order:
 
-1. Viking layer.
-2. USGS geology layer.
-3. Live NOAA Kp fetch.
-4. Extra POV images beyond three.
-5. Mission-card print polish.
-6. CTX-derived roughness.
-7. Multi-stop route optimization.
-8. Advanced mobile polish.
+1. Extra camera or hover polish.
+2. Additional documentation detail that does not affect submission claims.
+3. Any remaining deferred feature.
 
-Never cut:
+**Never cut:** the 3D terrain, three surfaces, A* route, safety panel, blocked example, local sources, caveats, mobile layout, offline build, public link, or AI disclosure.
 
-- A* route computation.
-- Safety panel and warnings.
-- Three working layers.
-- Public no-login link.
-- Mission card.
-- Local/offline fallback.
-- Sources and caveats.
+## Risks and Mitigations
 
-## Risks
-
-| Risk | Impact | Mitigation | Owner |
-| --- | --- | --- | --- |
-| Source export fails or changes | No terrain/layers | Cache early; use pre-baked fallback dataset | D |
-| CORS or service outage | Demo breaks | Local assets only; optional fetch has fallback | D/A |
-| DEM too coarse for claims | Scientific credibility | Label screening-resolution; avoid obstacle claims | D/E |
-| POV image location mismatch | Wrong story | Verify Gale sol/location and credits | D |
-| Contract drift | Integration failures | Freeze `src/types.ts`; update plan before changes | A/E |
-| GitHub Pages base-path bug | Blank deploy | Test production build under base path early | A |
-| Scope creep | Missing deadline | Enforce cut order and freeze | A |
-| Fatigue | Late mistakes | Rest rotation; freeze at 10:00 | All |
+| Risk | Impact | Mitigation |
+| --- | --- | --- |
+| Branch not merged before freeze | Public site still shows the scaffold | Merge and deploy before Saturday 10:00; keep a fallback video |
+| WebGL or headless screenshots fail | Demo verification gap | Test in a real browser; keep the standalone viewer as fallback |
+| Boxwork location unverified | Scientific credibility | State the caveat in the UI and docs; do not claim the site is confirmed |
+| Safety values unverified | Overclaiming | Label them as scenario assumptions; keep the non-operational banner |
+| 20 m merged DEM | Overstated precision | Call it screening-resolution; do not claim meter-scale obstacle detection |
+| Three.js r128 classic scripts | Build warnings | Keep the isolated boundary; verify the load order in production |
+| Submission deadline | Zero score | Submit the working demo and links before Saturday 13:00 |
 
 ## Acceptance Criteria
 
-- Public GitHub Pages URL loads without login.
-- At least three layers toggle with legend and attribution.
-- Start/end selection computes a route in under one second.
-- Route stats include distance, duration, max slope, and hazard.
-- Safety panel reports dose, suit-hours, and warnings.
-- At least three Gale POV images open from waypoints.
-- Mission card prints cleanly.
-- Desktop and 390 px mobile layouts work.
-- `npm run build` passes.
-- No critical console errors.
-- Sources, caveats, and AI disclosure are visible.
-- The demo works with local assets when optional network calls fail.
+- [x] `npm run build` passes.
+- [x] `npm run build:offline` passes.
+- [x] Terrain loads from local assets with no runtime external request.
+- [x] CTX, hillshade, and slope surfaces share registration.
+- [x] Default route succeeds; WP1 blocked example succeeds.
+- [x] Safety panel shows dose, suit-hours, slope, duration, and warnings.
+- [x] Sources, caveats, and assumptions are visible.
+- [x] Desktop and 390 px layout pass local checks.
+- [x] Default route computation is under one second.
+- [ ] Public Pages URL shows the offline demo after merge.
+- [ ] Fresh-session demo rehearsal passes with no console errors.
 
 ## Merge Checklist
 
-- [ ] Build passes.
-- [ ] Route and safety outputs match the contracts.
-- [ ] Sources and credits are updated.
-- [ ] `README.md`, `plan/`, and `docs/` remain consistent.
-- [ ] Desktop and 390 px checks pass.
-- [ ] No secrets, debug panels, or console noise.
-- [ ] A reviewed the integration impact.
+- [ ] `npm run build` and `npm run build:offline` pass on the merge candidate.
+- [ ] `public/data/gale/checksums.sha256` passes.
+- [ ] No runtime external requests are present.
+- [ ] No critical console errors remain.
+- [ ] `README.md`, `plan/`, and `docs/` match the implementation.
+- [ ] Sources and caveats remain visible.
+- [ ] A reviews the integration impact.
+- [ ] Merge to `main`, deploy, and verify the live URL.
