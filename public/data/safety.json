@@ -1,0 +1,16 @@
+{
+  "baselineDoseRatePerDay": 0.64,
+  "nominalEvaHours": 6,
+  "maxEvaHours": 8,
+  "walkSpeedKmH": 1.2,
+  "suitReserve": 0.25,
+  "maxSlopeDeg": 20,
+  "doseBudgetMsV": 150,
+  "sources": [
+    "MSL RAD archive: https://pds-ppi.igpp.ucla.edu/data/MSL-M-RAD-3-RDR-V1.0/"
+  ],
+  "notes": [
+    "Scenario assumptions for a hackathon demo; not a mission radiation or suit model.",
+    "Baseline dose rate is unverified and needs a specific citation."
+  ]
+}
