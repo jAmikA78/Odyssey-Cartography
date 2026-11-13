@@ -42,19 +42,15 @@ function App() {
   const [resetViewKey, setResetViewKey] = useState(0);
 
   useEffect(() => {
-    const controller = new AbortController();
     let cancelled = false;
 
     async function load() {
       try {
         const [nextTerrain, config] = await Promise.all([
-          loadGaleTerrain(controller.signal),
-          loadSafetyConfig(controller.signal),
+          loadGaleTerrain(),
+          loadSafetyConfig(),
         ]);
-        const nextWaypoints = await loadGaleWaypoints(
-          nextTerrain.patch,
-          controller.signal,
-        );
+        const nextWaypoints = await loadGaleWaypoints(nextTerrain.patch);
         if (cancelled) return;
 
         setTerrain(nextTerrain);
@@ -74,7 +70,7 @@ function App() {
           setSelectedWaypointId(startWaypoint.id);
         }
       } catch (error) {
-        if (cancelled || controller.signal.aborted) return;
+        if (cancelled) return;
         setLoadError(
           error instanceof Error
             ? error.message
@@ -83,10 +79,9 @@ function App() {
       }
     }
 
-    load();
+    void load();
     return () => {
       cancelled = true;
-      controller.abort();
     };
   }, []);
 

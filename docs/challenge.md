@@ -23,31 +23,44 @@ The official challenge text and submission instructions must be checked before t
 
 The challenge asks for a Mars survival-planning experience built around a map. A strong response should:
 
-- put multiple Mars datasets on one map,
+- put Mars datasets on one map,
 - connect the map to a specific exploration scenario,
 - help the user make a route or safety decision,
 - explain the data and its limits clearly.
 
-Odyssey answers with a layered Gale Crater map, a terrain-aware traverse planner, a survival/safety panel, and MSL/Curiosity POV imagery. The user selects a start, end, and optional waypoint; the app returns a route, time estimate, slope/hazard exposure, and warnings.
+Odyssey answers with an offline 3D Gale Crater terrain, a terrain-aware traverse planner, a safety panel, and visible caveats. The user selects a start and destination from synthetic waypoints; the app returns a route, time estimate, slope exposure, and safety warnings.
 
 ## Requirement Mapping
 
 | Challenge need | Odyssey response | Evidence |
 | --- | --- | --- |
-| Layered Mars map | CTX optical, MOLA terrain/hillshade, THEMIS thermal, optional USGS geology | [data-sources.md](data-sources.md) |
-| Specific Mars location | Illustrative Gale boxwork AOI near 4.95°S, 137.45°E | [research.md](research.md) |
-| Route planning | A* over a 256×256 slope/hazard grid | [../plan/architecture.md](../plan/architecture.md) |
-| Survival constraints | Radiation, suit-hours, slope, duration, reserve, dose budget | [safety-model.md](safety-model.md) |
-| Obstacle awareness | Slope no-go threshold and hazard cost; screening-resolution disclaimer | [safety-model.md](safety-model.md) |
-| Visual context | MSL/Curiosity POV images at selected waypoints | [data-sources.md](data-sources.md) |
-| Clear decision support | Route panel, warnings, printable mission card | [demo-and-submission.md](demo-and-submission.md) |
-| Public demo | Static GitHub Pages, local assets, no login | [../plan/architecture.md](../plan/architecture.md) |
+| Mars map | Local merged DEM plus CTX texture, hillshade, and slope surfaces | [data-sources.md](data-sources.md) |
+| Specific Mars location | Gale northwest Mount Sharp patch, 4.72 km across cell centers near 4.80°S, 137.40°E | [../plan/architecture.md](../plan/architecture.md) |
+| Route planning | A* over the 238×238 slope grid, 20° default limit | [../plan/architecture.md](../plan/architecture.md) |
+| Survival constraints | Radiation estimate, suit-hours, slope, duration, reserve, dose budget | [safety-model.md](safety-model.md) |
+| Obstacle awareness | Slope no-go threshold and slope-weighted cost; screening-resolution disclaimer | [safety-model.md](safety-model.md) |
+| Visual context | 3D terrain, CTX optical texture, hillshade, cursor readout, waypoint cards | [../plan/architecture.md](../plan/architecture.md) |
+| Clear decision support | Route panel, safety panel, warnings, persistent caveats, local sources | [demo-and-submission.md](demo-and-submission.md) |
+| Public demo | Static GitHub Pages, local assets, no login, no backend | [../plan/architecture.md](../plan/architecture.md) |
+
+### Dataset Count
+
+The current demo has **two source datasets** — the merged Gale DEM and the CTX texture — presented as three registered surfaces. Hillshade and slope are derived from the DEM and are not independent observations. This distinction is stated in the UI and source notes. If the official rubric requires three independent datasets, the deferred MOLA/THEMIS/geology layers can be revived, but they are not in the current runtime.
+
+### Deferred Against the Challenge
+
+- POV imagery is deferred.
+- The printable mission card is deferred.
+- MOLA, THEMIS, and geology context layers are deferred.
+- Live space-weather context is deferred.
+
+These are documented gaps, not hidden claims.
 
 ## Why Gale Crater
 
-Gale Crater is the MSL/Curiosity landing site, which gives the project a credible source of surface imagery and a well-known exploration context. The challenge's boxwork-style terrain is used as the scenario for route planning.
+Gale Crater is the MSL/Curiosity landing site, which gives the project a credible exploration context and a well-known terrain setting. The challenge's boxwork-style terrain is used as the scenario for route planning.
 
-The AOI is **illustrative** and approximately 20 km square. It is not a verified landing site or an approved traverse. If the data lead identifies a better boxwork field, update the AOI in one place and regenerate the grid and layers.
+The demo AOI is **illustrative** and **not verified** as the boxwork field. It is not a verified landing site or an approved traverse. If the data lead identifies a better boxwork field, update the AOI in one place and regenerate the pack and all surfaces.
 
 ## Scope
 
@@ -55,18 +68,19 @@ In scope:
 
 - One local AOI in Gale Crater.
 - One two-person EVA scenario.
-- Three required layers plus optional context layers.
-- One route at a time, with an optional intermediate waypoint.
+- CTX, hillshade, and slope surfaces at shared registration.
+- One route at a time, with start and destination waypoints.
 - Safety estimates and warnings.
-- Local POV imagery.
-- A printable mission card.
+- Local sources and visible caveats.
+- A public static 3D demo.
 
-Out of scope:
+Out of scope / deferred:
 
 - Global Mars routing.
 - Real-time mission operations.
 - Meter-scale obstacle detection.
 - Solar-particle-event forecasting.
+- POV imagery and a printable mission card.
 - User accounts, persistence, or collaboration.
 - Claims of safety certification.
 
@@ -78,11 +92,13 @@ Out of scope:
 - Disclose AI assistance as required by the event.
 - Check attribution and usage terms for every image and dataset.
 - Do not present the product as operational or mission-approved.
+- Do not claim the boxwork location is verified.
 
 ## Open Questions
 
 - Confirm the exact official challenge wording and judging rubric.
+- Confirm whether the rubric requires three independent datasets or three displayed layers.
 - Confirm the final submission form fields and deadline.
 - Verify the best illustrative boxwork AOI.
-- Confirm which POV images are unambiguously from Gale Crater.
+- Confirm which POV images are unambiguously from Gale Crater, if POV is revived.
 - Verify the radiation baseline with a citable source.

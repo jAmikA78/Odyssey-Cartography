@@ -4,9 +4,9 @@ Last updated: 2026-11-13
 
 ## Overview
 
-Odyssey is a static single-page application. A Python preprocessing step converts Mars source data into local layer images and a 256×256 terrain/hazard grid. The React client renders those layers with Leaflet, accepts waypoint clicks, runs A* in the browser, and presents route and safety results.
+Odyssey is a static single-page application. A pre-baked offline pack provides a Gale Crater DEM, slope raster, CTX texture, derived surfaces, synthetic waypoints, and vendor scripts. The React client loads that pack, renders a 3D terrain with Three.js, runs A* in the browser, and presents route and safety results.
 
-There is no backend and no database. The public demo must remain functional with only the repository's local assets.
+There is no backend, database, login, or required external request. The public demo remains functional with only the repository's local assets.
 
 ## System Context
 
@@ -14,95 +14,135 @@ There is no backend and no database. The public demo must remain functional with
 NASA / USGS sources
         |
         v
-scripts/preprocess.py
-  - download or export source assets
-  - crop to AOI
-  - resize layer images
-  - build elevation/slope/hazard grid
-  - write JSON contracts
+public/data/gale/  (pre-baked, checksummed offline pack)
+  data/metadata.json
+  data/elevation.f32
+  data/slope.f32
+  data/texture_ctx.jpg
+  data/hillshade.png
+  data/slope_preview.png
+  data/example_route.geojson
+  vendor/three.min.js
         |
         v
-public/layers/*.jpg  +  public/data/*.json  +  public/pov/*.jpg
+Vite build (GitHub Pages base)
         |
         v
-Vite + React + TypeScript + Leaflet
-  - local image overlays
-  - waypoint selection
-  - A* route planning
-  - safety panel
-  - POV modal
-  - mission card
+Browser
+  React app
+  TerrainView (Three.js r128)
+  A* route + safety screening
         |
         v
-static GitHub Pages
+Static GitHub Pages
 ```
 
-## Runtime Constraints
+The pack is the runtime source of truth. `gale-3d-offline.zip` is a local source archive only and is ignored by Git. The original full-AOI CTX/MOLA/THEMIS preprocessing pipeline is deferred; no root `scripts/preprocess.py` exists.
 
-- Target static hosting only; no server-side API.
-- Initial route computation under one second on a typical laptop.
-- Critical assets local; external fetches are optional enhancements.
-- Desktop and 390 px mobile width must both work.
-- The map must not require an external tile server during the demo.
+## AOI and CRS
 
-## Map and Coordinates
+| Property | Value |
+| --- | --- |
+| Patch | Northwest Mount Sharp demo patch, Gale Crater |
+| Bounds (lon/lat) | 137.36000069143637–137.44000109967354°E; 4.839992225631115–4.759991817393932°S |
+| Size | 4.72 km across cell centers; 4.74 km edge-to-edge |
+| CRS | Mars 2000 equidistant cylindrical / equirectangular, ESRI:103885 |
+| Radius | 3,396,190 m |
+| Central longitude / standard parallel | 0° / 0° |
+| Grid | 238 × 238 |
+| Cell size | 19.924 m |
+| Raster order | Row-major, north-to-south rows, little-endian float32 |
+| Elevation range | −4066.285 to −3094.734 m |
+| Slope range | 0.05–50.54° |
 
-- Leaflet CRS: `L.CRS.EPSG4326`.
-- Rendering: local `L.imageOverlay` layers, not Web Mercator tiles.
-- Every layer uses the same AOI bounds and pixel registration.
-- AOI: illustrative 20 km square centered near 4.95°S, 137.45°E.
-- The bounding box is generated from the center and size during preprocessing and stored in grid metadata.
-- Coordinate conversions live only in `src/lib/geo.ts`:
-  - latitude/longitude to grid cell,
-  - grid cell to latitude/longitude,
-  - grid cell to local pixel coordinates.
-- Local equirectangular distance is acceptable inside the small AOI; document the approximation.
-- Route output stays in grid coordinates and is converted at the UI boundary.
+The patch is **not verified** as the challenge's boxwork location.
 
-## Grid and Routing
+## Runtime Flow
 
-### Grid
+1. `src/App.tsx` mounts and loads terrain, safety constants, and waypoints in parallel.
+2. `loadGaleTerrain()` fetches `metadata.json`, `elevation.f32`, and `slope.f32` via `assetUrl()`, checks raster lengths, computes min/max elevation, and builds the 20° no-go mask.
+3. `loadSafetyConfig()` fetches `public/data/safety.json` and falls back to `DEFAULT_SAFETY` if unavailable.
+4. `loadWaypoints()` parses `example_route.geojson` into `GaleWaypoint[]`.
+5. `TerrainView.tsx` builds the Three.js scene, terrain mesh, surfaces, route line, and waypoint markers.
+6. Selecting a start and goal calls `planRoute()`; the result is passed to `evaluateSafety()`.
+7. Panels render distance, walk time, slope, climb/descent, safety status, warnings, caveats, and sources.
 
-- Dimensions: 256×256, row-major.
-- Cell size: approximately 78 m for a 20 km AOI.
-- Arrays: elevation, slope, hazard, and no-go.
-- Elevation source: MOLA 463 m DEM, resampled to the AOI grid.
-- Slope: computed from the DEM with a documented neighborhood method such as Horn.
-- Hazard: normalized slope plus optional roughness; not a substitute for rover-scale sensing.
-- No-go: slope above 20° or invalid data.
+## Core Modules
 
-### A*
+| File | Responsibility |
+| --- | --- |
+| `src/App.tsx` | Data loading, selection state, surface/exaggeration state, route orchestration |
+| `src/lib/assets.ts` | `assetUrl(path)` using `import.meta.env.BASE_URL` |
+| `src/lib/gale.ts` | Metadata/raster loading, `buildNoGo()`, `DEFAULT_MAX_SLOPE_DEG`, surface URLs |
+| `src/lib/geo.ts` | `Cell`, `gridIndex`, `inBounds`, cell↔world, cell↔lat/lon, step distances |
+| `src/lib/route.ts` | A* `planRoute()`, route metrics, route warnings |
+| `src/lib/safety.ts` | Safety constants, config loading, `evaluateSafety()` |
+| `src/lib/waypoints.ts` | GeoJSON parsing and waypoint validation |
+| `src/lib/three.ts` | Isolated vendored `THREE` global boundary |
+| `src/lib/format.ts` | Number, distance, duration, and coordinate formatting |
+| `src/components/TerrainView.tsx` | Scene, terrain mesh, surfaces, picking, route line, markers, cleanup |
+| `src/components/TerrainControls.tsx` | Surface switch, exaggeration, reset, hover, patch HUD |
+| `src/components/RoutePanel.tsx` | Route distance/time/slope/climb/descent and blocked state |
+| `src/components/SafetyPanel.tsx` | Safety status, dose, suit-hours, limits, warnings, assumptions |
+| `src/components/WaypointCard.tsx` | Waypoint details and set-start/set-destination actions |
+| `src/components/CaveatBanner.tsx` | Persistent synthetic-data and screening-resolution caveat |
+| `src/components/SourcesPanel.tsx` | Local sources, attributions, and limitations |
 
-- Eight-neighbor search over traversable cells.
-- Step cost includes distance and slope/hazard penalties.
-- Heuristic: Euclidean distance to the goal.
-- Returns no route when the goal is unreachable.
-- Route stats: distance, duration, maximum slope, average slope, hazard exposure, and warnings.
-- Walking speed: 1.2 km/h assumption; suit-hours include a 25% reserve.
-- Maximum traversable slope: 20°.
+## Coordinate Rules
 
-Routing logic must remain pure and testable under `src/lib/route.ts` and `src/lib/hazard.ts`.
+- Grid coordinates: `x = col`, `y = row`, with row 0 at the north edge.
+- Scene coordinates: `x` east, `y` up, `z` south, in metres.
+- `y = (elevation − minElevation) × verticalExaggeration`.
+- Latitude/longitude values in the pack are planetocentric degrees on Mars.
+- All conversions between lat/lon, cell, and scene coordinates live in `src/lib/geo.ts`.
+- Route output stays in grid coordinates; rendering and UI convert at the boundary.
+- All surfaces must share the same bounds, registration, and UV mapping.
+- Do not use Earth `EPSG:4326`, Web Mercator, Earth radius, or Earth scale-bar values.
+
+## Terrain and Surfaces
+
+| Surface | File | Role |
+| --- | --- | --- |
+| CTX | `data/texture_ctx.jpg` (466 × 466) | Optical context, color-mapped as RGB |
+| Hillshade | `data/hillshade.png` (238 × 238) | Shaded relief, azimuth 315°, altitude 45° |
+| Slope | `data/slope_preview.png` (238 × 238) | Slope screening display, clamped at 45° |
+
+The slope raster is derived from the DEM as `atan(hypot(dz/dx, dz/dsouth))`, with gradients in metres and one-sided differences at the edges. The hillshade is a display product, not an independent observation. The CTX texture is visual context; it is not used to infer slope or trafficability.
+
+## Routing
+
+`planRoute(terrain, start, goal, options)` implements A*:
+
+- Eight-connected neighbors.
+- No-go cells are those with slope greater than `maxSlopeDeg` (20° default; UI allows 10–30°).
+- A start or destination on a no-go cell returns a blocked result with a specific reason.
+- Diagonal moves are rejected when either orthogonal neighbor is no-go, preventing corner cutting.
+- Step distance is computed from the metre grid: 19.924 m orthogonal, about 28.18 m diagonal.
+- Step cost is `stepMeters × (1 + 4 × (slope / maxSlopeDeg)²)`.
+- Heuristic is the Euclidean grid distance to the goal in metres.
+- Route metrics include distance, duration at 1.2 km/h, maximum and mean slope, elevation gain/loss, steep fraction above 15°, and warnings.
+
+The default route is WP2 (row 90, col 90) → WP5 (row 170, col 170): 139 cells, 3.311 km, 2.76 h, maximum slope 13.87°, mean 7.02°, 311.3 m climb, 29 m descent. The computation is about 50 ms locally.
+
+WP1 (row 65, col 65) is a blocked example: its 22.19° slope makes it no-go at the 20° limit. The waypoints and route are synthetic demo data, not rover telemetry.
 
 ## Safety Model
 
-The client reads `public/data/safety.json` and evaluates:
+`evaluateSafety(route, config)` returns:
 
-- estimated radiation dose from a cited baseline rate and EVA duration,
-- required suit-hours versus rated capacity,
-- maximum slope versus the 20° limit,
-- walk time versus nominal and maximum EVA durations,
-- dose budget versus the configured mission limit.
+- `walkHours = distanceKm / walkSpeedKmH`
+- `requiredSuitHours = walkHours × (1 + suitReserve)`
+- `doseMsV = baselineDoseRatePerDay × walkHours / 24`
+- `status`: `blocked` when the route is not found or slope exceeds the limit; `caution` when suit-hours exceed nominal, dose exceeds the budget, or walk time exceeds the nominal EVA; otherwise `normal`.
 
-The safety model is illustrative and must be labeled as such. See [../docs/safety-model.md](../docs/safety-model.md).
+See [../docs/safety-model.md](../docs/safety-model.md) for the full rule table and non-claims.
 
-## Data and Runtime Contracts
+## Contracts
 
-Contracts are frozen once published. Changes require owner agreement and a plan update.
-
-### `GridMeta`
+Contracts live in `src/types.ts`. Changes require owner agreement, an update here, and a migration note.
 
 ```ts
-interface GridMeta {
+export interface GridMeta {
   width: number;
   height: number;
   bbox: [west: number, south: number, east: number, north: number];
@@ -110,162 +150,123 @@ interface GridMeta {
   metersPerCell: number;
   source: string;
 }
-```
 
-### `GaleGrid`
-
-```ts
-interface GaleGrid {
+export interface GaleTerrain {
   meta: GridMeta;
-  elevation: number[];
-  slope: number[];
-  hazard: number[];
-  noGo: boolean[];
+  patch: GalePatchMetadata;
+  elevation: Float32Array;
+  slope: Float32Array;
+  noGo: Uint8Array;
+  minElevation: number;
+  maxElevation: number;
 }
-```
 
-Arrays are flattened row-major with `index = y * width + x`.
-
-### `Waypoint`
-
-```ts
-interface Waypoint {
-  id: string;
-  label: string;
-  lat: number;
-  lon: number;
-  povId?: string;
+export interface GaleWaypoint extends Waypoint {
+  name: string;
+  row: number;
+  col: number;
+  elevationM: number;
+  slopeDeg: number;
+  synthetic: boolean;
 }
-```
 
-### `Pov`
-
-```ts
-interface Pov {
-  id: string;
-  waypointId: string;
-  image: string;
-  caption: string;
-  credit: string;
-  sourceUrl: string;
-  sol?: number;
+export interface GaleRouteResult extends RouteResult {
+  start: RoutePoint;
+  goal: RoutePoint;
+  elevationGainM: number;
+  elevationLossM: number;
+  steepFraction: number;
 }
-```
 
-### `RouteResult`
-
-```ts
-interface RouteResult {
-  ok: boolean;
-  path: Array<{ x: number; y: number }>;
-  distanceKm: number;
-  durationH: number;
-  maxSlope: number;
-  avgSlope: number;
-  hazard: number;
+export interface SafetyEvaluation {
+  status: "normal" | "caution" | "blocked";
+  doseMsV: number;
+  walkHours: number;
+  requiredSuitHours: number;
   warnings: string[];
+  assumptions: string[];
 }
 ```
 
-### `LayerConfig`
+`GalePatchMetadata` mirrors `public/data/gale/data/metadata.json`. `GaleGrid` and `LayerConfig` remain in `src/types.ts` for the deferred 2D-layer pipeline; the offline demo does not use them.
 
-```ts
-interface LayerConfig {
-  id: string;
-  label: string;
-  image: string;
-  bounds: [west: number, south: number, east: number, north: number];
-  attribution: string;
-  opacity: number;
-  description: string;
-  available: boolean;
-}
-```
-
-### `SafetyConfig`
-
-```ts
-interface SafetyConfig {
-  baselineDoseRatePerDay: number;
-  nominalEvaHours: number;
-  maxEvaHours: number;
-  walkSpeedKmH: number;
-  suitReserve: number;
-  maxSlopeDeg: number;
-  doseBudgetMsV: number;
-  sources: string[];
-  notes: string[];
-}
-```
-
-## File Layout
+## Offline Data Pack
 
 ```text
-src/
-  App.tsx
-  main.tsx
-  styles.css
-  types.ts
-  lib/
-    geo.ts
-    hazard.ts
-    route.ts
-    safety.ts
-  components/
-    MapView.tsx
-    LayerControl.tsx
-    RoutePanel.tsx
-    SafetyPanel.tsx
-    PovModal.tsx
-    MissionCard.tsx
-    Legend.tsx
-    SourceList.tsx
-scripts/preprocess.py
-public/data/
-  gale_grid.json
-  layers.json
-  waypoints.json
-  pov.json
-  safety.json
-public/layers/
-public/pov/
-.github/workflows/deploy.yml
+public/data/gale/
+  data/
+    metadata.json
+    elevation.f32
+    slope.f32
+    dem_20m.tif
+    slope_deg.tif
+    hillshade.tif
+    texture_ctx.jpg
+    hillshade.png
+    slope_preview.png
+    example_route.geojson
+    geology.geojson
+  vendor/
+    three.min.js
+    OrbitControls.js
+    THREE-LICENSE.txt
+  index.html
+  viewer.js
+  README.md
+  SOURCES.md
+  checksums.sha256
+  reproduce_dem_subset.py
 ```
 
-## Data Pipeline
+Integrity check:
 
-`scripts/preprocess.py` is owned by D and follows this order:
+```bash
+cd public/data/gale
+sha256sum -c checksums.sha256
+```
 
-1. Define the AOI center, size, and grid dimensions.
-2. Export or download CTX, MOLA, THEMIS, and optional geology assets.
-3. Crop and resize layer images to the same AOI and pixel grid.
-4. Parse the DEM, resample to 256×256, and compute slope.
-5. Build hazard and no-go arrays.
-6. Write `gale_grid.json`, `layers.json`, `waypoints.json`, `pov.json`, and `safety.json`.
-7. Resize POV images and record credits.
-8. Print a summary of resolutions, bounds, and checksums.
+The standalone `index.html` / `viewer.js` is kept as a reference and fallback viewer. The React app is the public demo.
 
-Current environment has `numpy`, `scipy`, `Pillow`, and `requests`; it does not have `rasterio`, `tifffile`, `pyproj`, or `shapely`. Prefer PNG/JSON exports where possible. Add a lightweight parser only if the chosen DEM export requires it, and document the dependency.
+## Three.js Boundary
 
-## External Services and Fallback
-
-- Local assets are the demo path.
-- Optional services such as NOAA Kp may be fetched at runtime.
-- A failed optional fetch must show a neutral fallback and must not block the map.
-- No runtime service may require an API key.
-- No analytics, telemetry, or login.
+- Three.js r128 is vendored as classic scripts in `index.html`, not installed from npm.
+- `src/lib/three.ts` is the only module that reads the `THREE` global and throws a clear error if it is missing.
+- `TerrainView.tsx` consumes that isolated boundary.
+- Vite warns that classic vendor scripts cannot be bundled without `type="module"`; this is expected and non-fatal. The scripts load before the module entry.
 
 ## Deployment
 
-- GitHub Actions builds with Vite and publishes the static artifact to GitHub Pages.
-- Vite `base` must be `/Odyssey-Cartography/`.
-- A verifies the production preview under the base path before merge.
-- Only A merges deployment changes to `main`.
+- `vite.config.ts` sets `base: "/Odyssey-Cartography/"`.
+- `npm run build` produces the Pages build.
+- `npm run build:offline` runs `tsc -b && vite build --base=./` for a relative-root check.
+- `.github/workflows/deploy.yml` builds and deploys from `main`.
+- The live site updates only after merge and workflow completion.
 
-## Open Items
+## Runtime Failure Behavior
 
-- Verify the exact Gale boxwork AOI and replace the illustrative coordinates if needed.
-- Confirm the DEM export format and whether a parser dependency is required.
-- Select at least three Gale POV images with clear credits.
-- Verify the radiation baseline against a citable source.
-- Confirm the official challenge wording and submission requirements.
+| Failure | Behavior |
+| --- | --- |
+| Terrain fetch fails | Show an error state; do not render a fake terrain |
+| Safety config fails | Use documented `DEFAULT_SAFETY` assumptions and note it |
+| Waypoint file fails | Show a waypoint error; terrain remains usable |
+| Three.js global missing | Show a clear load error instead of a blank canvas |
+| Start or destination no-go | Return a blocked route with the specific slope reason |
+| No path at the current limit | Return a blocked route and suggest raising the limit |
+| WebGL unavailable | Show a fallback message; do not crash the app |
+
+## Deferred Work
+
+- Full 20 km AOI and the original 256×256 MOLA/THEMIS/CTX overlay pipeline.
+- Leaflet 2D layer view and layer toggles.
+- POV imagery and printable mission card.
+- USGS geology, thermal context, and live NOAA Kp.
+- Automated test harness and CI checks beyond build/deploy.
+
+## Open Engineering Questions
+
+- Should the bottom-left coordinate readout be labeled planetocentric to avoid ambiguity? It currently says “Planetocentric lon/lat.”
+- Should waypoint elevation be recomputed from the loaded raster instead of trusted from the GeoJSON? It currently uses the pack values.
+- Should the app expose a route-distance note that cell-center steps are approximations, not surveyed paths?
+- Should the 10–30° slope control persist in the URL for demos?
+
+These are enhancements, not blockers.
