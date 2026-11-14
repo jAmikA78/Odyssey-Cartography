@@ -28,7 +28,15 @@ export interface TerrainViewProps {
   onPick: (cell: Cell) => void;
   onHover: (cell: Cell | null) => void;
   onWaypointSelect: (id: string) => void;
+
   onGeologyLoaded?: (info: GeologyInfo) => void;
+
+  onInspect: (cell: Cell) => void;
+  inspectCell: Cell | null;
+  walkPlaying: boolean;
+  walkResetKey: number;
+  onWalkProgress: (progress: number | null) => void;
+
 }
 
 interface SceneState {
@@ -43,6 +51,15 @@ interface SceneState {
   materials: Record<TerrainSurface, any>;
   mineralMaterial: any;
   geologyGroup: any;
+  inspectGroup: any;
+  astronaut: any;
+  traveled: any;
+  traveledIndexCount: number;
+  pathPoints: any[];
+  pathCum: number[];
+  pathLength: number;
+  walkDist: number;
+  walkLastSent: number;
   resetView: () => void;
 }
 
@@ -126,6 +143,7 @@ function makeLabel(text: string, color: string): any {
   sprite.renderOrder = 40;
   return sprite;
 }
+
 
 function drawPolygonRing(
   ctx: CanvasRenderingContext2D,
@@ -211,6 +229,71 @@ function buildGeologyCanvas(
   return canvas;
 }
 
+function makeAstronaut(): any {
+  const group = new THREE.Group();
+  const suit = new THREE.MeshBasicMaterial({
+    color: 0xffffff,
+    depthTest: false,
+  });
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(13, 15, 44, 10), suit);
+  body.position.y = 30;
+  group.add(body);
+  const helmet = new THREE.Mesh(new THREE.SphereGeometry(15, 14, 10), suit);
+  helmet.position.y = 66;
+  group.add(helmet);
+  const pack = new THREE.Mesh(
+    new THREE.BoxGeometry(16, 26, 10),
+    new THREE.MeshBasicMaterial({ color: 0xd8e2ec, depthTest: false }),
+  );
+  pack.position.set(0, 36, 15);
+  group.add(pack);
+  const visor = new THREE.Mesh(
+    new THREE.SphereGeometry(8, 10, 8),
+    new THREE.MeshBasicMaterial({ color: 0x18242f, depthTest: false }),
+  );
+  visor.position.set(0, 68, -10);
+  group.add(visor);
+  group.traverse((node: any) => {
+    node.renderOrder = 36;
+  });
+  group.scale.set(2.2, 2.2, 2.2);
+  return group;
+}
+
+function positionAstronaut(state: SceneState): void {
+  if (!state.astronaut || state.pathPoints.length === 0) return;
+  const dist = Math.min(Math.max(state.walkDist, 0), state.pathLength);
+  let lo = 0;
+  let hi = state.pathCum.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (state.pathCum[mid] < dist) lo = mid + 1;
+    else hi = mid;
+  }
+  const i1 = Math.max(1, lo);
+  const i0 = i1 - 1;
+  const d0 = state.pathCum[i0];
+  const d1 = state.pathCum[i1];
+  const t = d1 > d0 ? (dist - d0) / (d1 - d0) : 0;
+  const p0 = state.pathPoints[i0];
+  const p1 = state.pathPoints[i1];
+  const bob = Math.sin(dist * 0.045) * 3;
+  state.astronaut.position.set(
+    p0.x + (p1.x - p0.x) * t,
+    p0.y + (p1.y - p0.y) * t + 8 + bob,
+    p0.z + (p1.z - p0.z) * t,
+  );
+  state.astronaut.rotation.y = Math.atan2(p1.x - p0.x, p1.z - p0.z);
+  if (state.traveled && state.pathLength > 0) {
+    const fraction = Math.min(Math.max(dist / state.pathLength, 0), 1);
+    state.traveled.geometry.setDrawRange(
+      0,
+      Math.floor(state.traveledIndexCount * fraction),
+    );
+  }
+
+}
+
 function rebuildRoute(
   state: SceneState,
   terrain: GaleTerrain,
@@ -218,6 +301,13 @@ function rebuildRoute(
   exaggeration: number,
 ): void {
   clearGroup(state.routeGroup);
+  state.astronaut = null;
+  state.traveled = null;
+  state.traveledIndexCount = 0;
+  state.pathPoints = [];
+  state.pathCum = [];
+  state.pathLength = 0;
+  state.walkDist = 0;
   if (!route || !route.ok || route.path.length < 2) return;
 
   const width = terrain.meta.width;
@@ -242,15 +332,75 @@ function rebuildRoute(
     }
   }
 
-  const geometry = new THREE.BufferGeometry().setFromPoints(points);
-  const material = new THREE.LineBasicMaterial({
+  state.pathPoints = points;
+  const cum: number[] = [0];
+  for (let i = 1; i < points.length; i += 1) {
+    cum.push(cum[i - 1] + points[i].distanceTo(points[i - 1]));
+  }
+  state.pathCum = cum;
+  state.pathLength = cum[cum.length - 1] ?? 0;
+
+  const curve = new THREE.CatmullRomCurve3(points);
+  const geometry = new THREE.TubeGeometry(
+    curve,
+    Math.min(points.length * 2, 3000),
+    5,
+    6,
+    false,
+  );
+  const material = new THREE.MeshBasicMaterial({
     color: 0x49ffe2,
     depthTest: false,
     transparent: true,
   });
-  const line = new THREE.Line(geometry, material);
-  line.renderOrder = 30;
-  state.routeGroup.add(line);
+  const tube = new THREE.Mesh(geometry, material);
+  tube.renderOrder = 30;
+  state.routeGroup.add(tube);
+
+  const glowGeometry = new THREE.TubeGeometry(
+    curve,
+    Math.min(points.length * 2, 3000),
+    12,
+    6,
+    false,
+  );
+  const glow = new THREE.Mesh(
+    glowGeometry,
+    new THREE.MeshBasicMaterial({
+      color: 0x49ffe2,
+      depthTest: false,
+      transparent: true,
+      opacity: 0.22,
+    }),
+  );
+  glow.renderOrder = 29;
+  state.routeGroup.add(glow);
+
+  const traveledGeometry = new THREE.TubeGeometry(
+    curve,
+    Math.min(points.length * 2, 3000),
+    6.4,
+    6,
+    false,
+  );
+  traveledGeometry.setDrawRange(0, 0);
+  const traveled = new THREE.Mesh(
+    traveledGeometry,
+    new THREE.MeshBasicMaterial({
+      color: 0xffb84d,
+      depthTest: false,
+      transparent: true,
+    }),
+  );
+  traveled.renderOrder = 31;
+  state.routeGroup.add(traveled);
+  state.traveled = traveled;
+  const traveledIndex = traveledGeometry.getIndex();
+  state.traveledIndexCount = traveledIndex ? traveledIndex.count : 0;
+
+  state.astronaut = makeAstronaut();
+  positionAstronaut(state);
+  state.routeGroup.add(state.astronaut);
 }
 
 function rebuildMarkers(
@@ -500,8 +650,10 @@ export function TerrainView(props: TerrainViewProps) {
     const decorGroup = addDecor(scene, widthMeters, depthMeters);
     const routeGroup = new THREE.Group();
     const markerGroup = new THREE.Group();
+    const inspectGroup = new THREE.Group();
     scene.add(routeGroup);
     scene.add(markerGroup);
+    scene.add(inspectGroup);
 
     const state: SceneState = {
       renderer,
@@ -515,6 +667,15 @@ export function TerrainView(props: TerrainViewProps) {
       materials,
       mineralMaterial,
       geologyGroup,
+      inspectGroup,
+      astronaut: null,
+      traveled: null,
+      traveledIndexCount: 0,
+      pathPoints: [],
+      pathCum: [],
+      pathLength: 0,
+      walkDist: 0,
+      walkLastSent: 0,
       resetView,
     };
     sceneRef.current = state;
@@ -645,7 +806,10 @@ export function TerrainView(props: TerrainViewProps) {
       const result = pickAt(event.clientX, event.clientY, true);
       if (!result) return;
       if (result.waypointId) propsRef.current.onWaypointSelect(result.waypointId);
-      else if (result.cell) propsRef.current.onPick(result.cell);
+      else if (result.cell) {
+        propsRef.current.onPick(result.cell);
+        propsRef.current.onInspect(result.cell);
+      }
     };
     const onPointerCancel = (): void => {
       pointerDown = null;
@@ -700,8 +864,33 @@ export function TerrainView(props: TerrainViewProps) {
     resize();
 
     let frame = 0;
+    let lastTick = performance.now();
     const animate = (): void => {
       frame = requestAnimationFrame(animate);
+      const now = performance.now();
+      const dt = Math.min((now - lastTick) / 1000, 0.1);
+      lastTick = now;
+      if (
+        propsRef.current.walkPlaying &&
+        state.astronaut &&
+        state.pathLength > 0
+      ) {
+        state.walkDist = Math.min(
+          state.walkDist + dt * (state.pathLength / 18),
+          state.pathLength,
+        );
+        positionAstronaut(state);
+      }
+      if (state.pathLength > 0) {
+        const progress = state.walkDist / state.pathLength;
+        if (
+          Math.abs(progress - state.walkLastSent) > 0.005 ||
+          (progress >= 1 && state.walkLastSent < 1)
+        ) {
+          state.walkLastSent = progress;
+          propsRef.current.onWalkProgress(progress);
+        }
+      }
       controls.update();
       renderer.render(scene, camera);
     };
@@ -727,6 +916,7 @@ export function TerrainView(props: TerrainViewProps) {
       controls.dispose();
       clearGroup(routeGroup);
       clearGroup(markerGroup);
+      clearGroup(inspectGroup);
       disposeObject(terrainMesh);
       clearGroup(decorGroup);
       clearGroup(geologyGroup);
@@ -800,8 +990,51 @@ export function TerrainView(props: TerrainViewProps) {
     const state = sceneRef.current;
     if (state) {
       rebuildRoute(state, props.terrain, props.route, props.exaggeration);
+      state.walkLastSent = 0;
+      props.onWalkProgress(props.route && props.route.ok ? 0 : null);
     }
   }, [props.terrain, props.route, props.exaggeration]);
+
+  useEffect(() => {
+    const state = sceneRef.current;
+    if (!state || props.walkResetKey === 0) return;
+    state.walkDist = 0;
+    state.walkLastSent = 0;
+    positionAstronaut(state);
+    props.onWalkProgress(state.pathLength > 0 ? 0 : null);
+  }, [props.walkResetKey]);
+
+  useEffect(() => {
+    const state = sceneRef.current;
+    if (!state) return;
+    clearGroup(state.inspectGroup);
+    const cell = props.inspectCell;
+    if (!cell) return;
+    const { terrain, exaggeration } = props;
+    const width = terrain.meta.width;
+    if (!inBounds(cell.row, cell.col, width, terrain.meta.height)) return;
+    const world = cellToWorld(cell.row, cell.col, terrain.patch);
+    const topY =
+      (terrain.elevation[cell.row * width + cell.col] - terrain.minElevation) *
+      exaggeration;
+    const pin = new THREE.Mesh(
+      new THREE.SphereGeometry(22, 14, 10),
+      new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false }),
+    );
+    pin.position.set(world.x, topY + 70, world.z);
+    pin.renderOrder = 34;
+    state.inspectGroup.add(pin);
+    const stemGeometry = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(world.x, topY + 2, world.z),
+      new THREE.Vector3(world.x, topY + 52, world.z),
+    ]);
+    const stem = new THREE.Line(
+      stemGeometry,
+      new THREE.LineBasicMaterial({ color: 0xffffff, depthTest: false }),
+    );
+    stem.renderOrder = 34;
+    state.inspectGroup.add(stem);
+  }, [props.inspectCell, props.terrain, props.exaggeration]);
 
   useEffect(() => {
     const state = sceneRef.current;
@@ -853,9 +1086,9 @@ export function TerrainView(props: TerrainViewProps) {
       ) : null}
       {!error ? (
         <div className="terrain-hint">
-          Drag to orbit · scroll to zoom · click terrain to set a point
+          Drag to orbit · scroll to zoom · click terrain to pin an info card
         </div>
       ) : null}
     </div>
   );
-}
+        }
