@@ -2,7 +2,7 @@
 
 **NASA Space Apps Challenge Cairo 2026 — "Interplanetary Survival Guide: Martian Map"**
 
-> **Status:** The offline 3D demo is implemented on `feat/gale-3d-offline` and verified locally at desktop and 390 px widths. It includes the Gale terrain pack, A* slope routing, safety screening, waypoint cards, and routed 3D surfaces. The public GitHub Pages site is built from `main`; it shows this version only after the branch is merged and deployed.
+> **Status:** The feature branch includes the integrated terrain, minerals, geology, Curiosity gallery, printable mission card, and helmet view. The expedition console adds animated beacons, route playback, elevation scrubbing, camera presets, and a data-backed visor terrain scan. The public deployment has not been verified in this pass.
 
 ## What It Is
 
@@ -32,7 +32,21 @@ The official challenge wording and judging rubric should be checked before submi
 - **Sources and caveats:** a persistent demo banner, local source notes, a limitations list, and visible assumption notes.
 - **Offline-first:** all terrain, textures, vendor scripts, waypoints, and safety constants are local. The runtime makes no external tile, API, or telemetry requests and needs no login or backend.
 
-**Not implemented / deferred:** POV imagery, printable mission card, the original CTX/MOLA/THEMIS overlay stack, the full 20 km AOI pipeline, geology display, live NOAA Kp, rover-scale obstacle inventory, and thermal modeling.
+**Not implemented / deferred:** the original MOLA/THEMIS overlay stack, the full 20 km AOI pipeline, live NOAA Kp, rover-scale obstacle inventory, and thermal modeling.
+
+### Expedition console
+
+- Sculpted terrain edges, warm display lighting, and optional 100 m DEM contours. The cutaway is decorative, not subsurface geology.
+- Pulsing waypoint beacons, moving route accents, and visible markers for custom start/destination cells.
+- Overview, north-up top view, focus-on-waypoint, and optional orbit camera modes.
+- Distance-based route playback with a scrub-able elevation profile. Playback is a compressed preview, not telemetry.
+- Plan, Waypoints, and Discover panels; collapsible terrain/layer tools; responsive mobile layout.
+- Reduced-motion preference and a manual Motion switch for ambient effects.
+- Existing CRISM indices, regional geology, Curiosity image gallery, printable mission card, and helmet view remain available.
+- The helmet view uses a sharper local CTX crop and a detailed illustrative scout rover. The terrain and route still use the 20 m DEM.
+- Its camera follows the progress control and looks along the route; subtle dust and haze add atmosphere without changing route or safety data.
+
+See [docs/visual-experience.md](docs/visual-experience.md) for behavior, limits, and validation.
 
 ## Build
 
@@ -49,7 +63,7 @@ The official challenge wording and judging rubric should be checked before submi
 
 Live URL: <https://jamika78.github.io/Odyssey-Cartography/>.
 
-The live site follows `main`. If it still shows the scaffold, the `feat/gale-3d-offline` branch has not been merged yet. The demo must open without a login and must not depend on a local development server.
+The live site follows `main`. The public deployment was not inspected or changed during this redesign. The demo must open without a login and must not depend on a local development server.
 
 Local offline check:
 
@@ -65,6 +79,7 @@ Then open the printed local URL. `build:offline` uses a relative base so the bui
 ```bash
 npm install
 npm run dev
+npm test
 npm run build
 npm run preview
 npm run build:offline
@@ -87,7 +102,10 @@ Expected environment:
 | Hillshade and slope | Derived from the local DEM | Display products; not independent observations |
 | Waypoints and example line | Synthetic local GeoJSON | Not Curiosity telemetry and not a safe/optimal route |
 | Safety constants | Demo assumptions in `public/data/safety.json` | Unverified baseline dose and scenario limits |
-| Deferred sources | MOLA 463 m, THEMIS, USGS geology, MSL POV, NOAA Kp | Not used by the current runtime |
+| Mineral context | CRISM FRT000058A3 MTRDR, 21 indices | Candidate signatures; gap-filled cells flagged |
+| Regional geology | USGS SIM 3292 | Coarse context, not local hazards |
+| Surface context | Three local Curiosity/Mastcam images | Credits and source links in gallery |
+| Deferred sources | MOLA 463 m, THEMIS, NOAA Kp | Not used by the current runtime |
 
 Primary links:
 

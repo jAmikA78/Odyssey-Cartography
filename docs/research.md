@@ -1,6 +1,6 @@
 # Research Notes
 
-Last updated: 2026-11-13
+Last updated: 2026-11-14
 
 ## Purpose
 
@@ -27,7 +27,7 @@ This document records the research that shaped the Odyssey build: what was check
 - **MOLA hillshade and DEM are available through Mars Trek.** The global MOLA product is about 463 m per pixel at the equator; it is regional screening data, not rover-scale terrain.
 - **THEMIS day and night products are available as Mars Trek layers.** They are thermal context, not a calibrated traverse-cost input.
 - **USGS publishes a global Mars geology map service.** It is coarse and optional context, not a Gale-specific engineering map.
-- **MSL raw images are available through NASA's Mars API.** MSL is the correct mission for Gale Crater. The POV feature is deferred.
+- **MSL raw images are available through NASA's Mars API.** MSL is the correct mission for Gale Crater. A local Curiosity gallery is now present; its existing credits are retained.
 - **MSL RAD data are archived in the Planetary Data System.** RAD is the right reference family for radiation context, but the team still needs to select and cite a specific baseline value.
 - **NOAA SWPC provides a planetary K-index JSON feed.** Kp is Earth space-weather context; it is not a direct Mars surface dose predictor. It is not fetched by the current demo.
 - **NASA Worldview is an Earth-observation tool.** It is not a Mars data source and must not appear in the Mars layer list.
@@ -49,7 +49,7 @@ This document records the research that shaped the Odyssey build: what was check
 - **MOLA as obstacle detection.** The resolution is too coarse for meter-scale claims.
 - **The original 20 km / 256×256 MOLA/THEMIS/CTX overlay pipeline.** The pre-baked 4.72 km cell-center patch is faster, offline-safe, and already verified.
 - **USGS global geology as a primary layer.** It is coarse and optional.
-- **POV imagery and printable mission card in this iteration.** Both were cut to protect the critical path.
+- **POV imagery and printable mission card.** Originally cut, subsequently implemented in the integrated baseline.
 
 ## Data Decisions
 

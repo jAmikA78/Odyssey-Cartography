@@ -3,6 +3,7 @@ import { assetUrl } from "../lib/assets";
 import { cellToWorld, inBounds, worldToCell, type Cell } from "../lib/geo";
 import { mineralTexturePath, SURFACE_TEXTURES } from "../lib/gale";
 import { assertThreeLoaded, THREE } from "../lib/three";
+import { sampleTraverse } from "../lib/traverse";
 import type {
   GaleRouteResult,
   GaleTerrain,
@@ -25,6 +26,7 @@ export interface TerrainViewProps {
   resetViewKey: number;
   mineralBand: string | null;
   showGeology: boolean;
+  progress: number;
   onPick: (cell: Cell) => void;
   onHover: (cell: Cell | null) => void;
   onWaypointSelect: (id: string) => void;
@@ -32,6 +34,7 @@ export interface TerrainViewProps {
 }
 
 interface SceneState {
+  // The vendored r128 global is intentionally isolated to this rendering boundary.
   renderer: any;
   scene: any;
   camera: any;
@@ -43,6 +46,12 @@ interface SceneState {
   materials: Record<TerrainSurface, any>;
   mineralMaterial: any;
   geologyGroup: any;
+  reliefGroup: any;
+  contourGroup: any;
+  routeSamples: ReturnType<typeof sampleTraverse>;
+  routePoints: any[];
+  traveller: any;
+  flyTo: (position: any, target: any) => void;
   resetView: () => void;
 }
 
@@ -65,7 +74,8 @@ function disposeObject(object: any): void {
 
 function clearGroup(group: any): void {
   while (group.children.length > 0) {
-    const child = group.children.pop();
+    const child = group.children[0];
+    group.remove(child);
     disposeObject(child);
   }
 }
@@ -218,39 +228,52 @@ function rebuildRoute(
   exaggeration: number,
 ): void {
   clearGroup(state.routeGroup);
+  state.routeSamples = sampleTraverse(terrain, route);
+  state.routePoints = [];
+  state.traveller = null;
   if (!route || !route.ok || route.path.length < 2) return;
-
-  const width = terrain.meta.width;
-  const points: any[] = [];
-  for (let i = 1; i < route.path.length; i += 1) {
-    const previous = route.path[i - 1];
-    const current = route.path[i];
-    const steps =
-      Math.max(
-        Math.abs(current.y - previous.y),
-        Math.abs(current.x - previous.x),
-      ) * 2;
-    for (let step = 0; step <= steps; step += 1) {
-      const t = step / steps;
-      const row = Math.round(previous.y + (current.y - previous.y) * t);
-      const col = Math.round(previous.x + (current.x - previous.x) * t);
-      const world = cellToWorld(row, col, terrain.patch);
-      const elevation = terrain.elevation[row * width + col] - terrain.minElevation;
-      points.push(
-        new THREE.Vector3(world.x, elevation * exaggeration + 28, world.z),
-      );
-    }
-  }
-
-  const geometry = new THREE.BufferGeometry().setFromPoints(points);
-  const material = new THREE.LineBasicMaterial({
-    color: 0x49ffe2,
-    depthTest: false,
-    transparent: true,
+  const points = state.routeSamples.map(sample => {
+    const world = cellToWorld(sample.y, sample.x, terrain.patch);
+    return new THREE.Vector3(world.x, (sample.elevation - terrain.minElevation) * exaggeration + 22, world.z);
   });
-  const line = new THREE.Line(geometry, material);
-  line.renderOrder = 30;
-  state.routeGroup.add(line);
+  state.routePoints = points;
+  // Piecewise linear path preserves the computed cell corridor; no spline shortcuts.
+  const curve = new THREE.CurvePath();
+  for (let i = 1; i < points.length; i++) curve.add(new THREE.LineCurve3(points[i - 1], points[i]));
+  for (const [radius, opacity] of [[18, 0.12], [6, 0.95]]) {
+    const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, points.length * 2, radius, 5, false),
+      new THREE.MeshBasicMaterial({ color: 0x65e3ce, transparent: true, opacity, depthTest: false, depthWrite: false }));
+    tube.renderOrder = 30;
+    state.routeGroup.add(tube);
+  }
+  for (let i = 0; i < 5; i++) {
+    const pulse = new THREE.Mesh(new THREE.SphereGeometry(12, 8, 6), new THREE.MeshBasicMaterial({ color: 0xe1fff7, depthTest: false }));
+    pulse.userData.flow = i / 5;
+    pulse.renderOrder = 32;
+    state.routeGroup.add(pulse);
+  }
+  const traveller = new THREE.Group();
+  const core = new THREE.Mesh(new THREE.OctahedronGeometry(36), new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false }));
+  core.position.y = 40;
+  core.renderOrder = 36;
+  traveller.add(core);
+  const ring = new THREE.Mesh(new THREE.RingGeometry(55, 63, 48), new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide, depthTest: false }));
+  ring.rotation.x = -Math.PI / 2;
+  ring.renderOrder = 36;
+  traveller.add(ring);
+  state.traveller = traveller;
+  state.routeGroup.add(traveller);
+}
+
+function positionOnRoute(state: SceneState, progress: number, target: any): void {
+  const samples = state.routeSamples;
+  if (samples.length < 2) return;
+  const distance = progress * samples[samples.length - 1].distanceM;
+  let next = samples.findIndex(sample => sample.distanceM >= distance);
+  next = Math.max(1, next < 0 ? samples.length - 1 : next);
+  const previous = samples[next - 1];
+  const t = (distance - previous.distanceM) / Math.max(0.001, samples[next].distanceM - previous.distanceM);
+  target.copy(state.routePoints[next - 1]).lerp(state.routePoints[next], t);
 }
 
 function rebuildMarkers(
@@ -267,7 +290,7 @@ function rebuildMarkers(
   const width = terrain.meta.width;
   const height = terrain.meta.height;
 
-  for (const waypoint of waypoints) {
+  for (const [markerIndex, waypoint] of waypoints.entries()) {
     if (!inBounds(waypoint.row, waypoint.col, width, height)) continue;
     const world = cellToWorld(waypoint.row, waypoint.col, terrain.patch);
     const baseY =
@@ -290,24 +313,111 @@ function rebuildMarkers(
             ? 0xffffff
             : 0xb9c7d6;
 
+    const beacon = new THREE.Group();
+    beacon.position.set(world.x, baseY + 12, world.z);
+    beacon.userData.phase = markerIndex * 0.7;
     const sphere = new THREE.Mesh(
-      new THREE.SphereGeometry(isSelected ? 46 : 34, 16, 12),
+      new THREE.OctahedronGeometry(isSelected ? 43 : 28),
       new THREE.MeshBasicMaterial({ color, depthTest: false }),
     );
-    sphere.position.set(world.x, baseY + 36, world.z);
+    sphere.position.set(0, 165, 0);
+    sphere.userData.bob = true;
     sphere.renderOrder = 35;
     sphere.userData.waypointId = waypoint.id;
-    state.markerGroup.add(sphere);
+    beacon.add(sphere);
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(2, 2, 145, 6), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.7, depthTest: false }));
+    stem.position.y = 75;
+    stem.renderOrder = 34;
+    beacon.add(stem);
+    for (let i = 0; i < 3; i++) {
+      const ring = new THREE.Mesh(new THREE.RingGeometry(54, i ? 57 : 62, 48), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.7, side: THREE.DoubleSide, depthTest: false, depthWrite: false }));
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.y = 4;
+      ring.userData.pulse = i;
+      ring.renderOrder = 34;
+      beacon.add(ring);
+    }
 
     const labelColor = blocked ? "#ff8b8b" : isSelected ? "#ffffff" : "#d8e2ec";
     const label = makeLabel(waypoint.label, labelColor);
     if (label) {
-      label.scale.set(360, 180, 1);
-      label.position.set(world.x, baseY + 180, world.z);
+      label.scale.set(390, 195, 1);
+      label.position.set(0, 315, 0);
       label.userData.waypointId = waypoint.id;
-      state.markerGroup.add(label);
+      beacon.add(label);
     }
+    beacon.traverse((node: any) => { node.userData.waypointId = waypoint.id; });
+    state.markerGroup.add(beacon);
   }
+  // Picked cells also receive visible endpoints, even when they are not named waypoints.
+  for (const [cell, color, name] of [[start, 0x65e3ce, "START"], [goal, 0xffd260, "GOAL"]] as const) {
+    if (!cell || waypoints.some(w => w.row === cell.row && w.col === cell.col)) continue;
+    const world = cellToWorld(cell.row, cell.col, terrain.patch);
+    const y = (terrain.elevation[cell.row * width + cell.col] - terrain.minElevation) * exaggeration;
+    const pin = new THREE.Mesh(new THREE.ConeGeometry(35, 100, 5), new THREE.MeshBasicMaterial({ color, depthTest: false }));
+    pin.rotation.z = Math.PI;
+    pin.position.set(world.x, y + 80, world.z);
+    pin.renderOrder = 35;
+    state.markerGroup.add(pin);
+    const label = makeLabel(name, "#ffffff");
+    if (label) { label.position.set(world.x, y + 210, world.z); state.markerGroup.add(label); }
+  }
+}
+
+function buildRelief(terrain: GaleTerrain): { relief: any; contours: any } {
+  const relief = new THREE.Group();
+  const contours = new THREE.Group();
+  const { width, height } = terrain.meta;
+  const point = (row: number, col: number) => {
+    const world = cellToWorld(row, col, terrain.patch);
+    return new THREE.Vector3(world.x, terrain.elevation[row * width + col] - terrain.minElevation, world.z);
+  };
+  const edge: any[] = [];
+  for (let col = 0; col < width; col++) edge.push(point(0, col));
+  for (let row = 1; row < height; row++) edge.push(point(row, width - 1));
+  for (let col = width - 2; col >= 0; col--) edge.push(point(height - 1, col));
+  for (let row = height - 2; row >= 0; row--) edge.push(point(row, 0));
+  const vertices: number[] = [];
+  for (let i = 1; i < edge.length; i++) {
+    const a = edge[i - 1], b = edge[i];
+    vertices.push(a.x,a.y,a.z, a.x,-180,a.z, b.x,b.y,b.z, b.x,b.y,b.z, a.x,-180,a.z, b.x,-180,b.z);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
+  const colors: number[] = [];
+  const bottomColor = new THREE.Color(0x101d24);
+  const topColor = new THREE.Color(0x584333);
+  for (let i = 1; i < vertices.length; i += 3) {
+    const color = bottomColor.clone().lerp(topColor, Math.min(1, Math.max(0, (vertices[i] + 180) / 1200)));
+    colors.push(color.r, color.g, color.b);
+  }
+  geometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+  geometry.computeVertexNormals();
+  relief.add(new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, side: THREE.DoubleSide })));
+  const rim = new THREE.Line(new THREE.BufferGeometry().setFromPoints(edge.map(p => p.clone().add(new THREE.Vector3(0, 3, 0)))), new THREE.LineBasicMaterial({ color: 0xe6ab7d, transparent: true, opacity: 0.3 }));
+  relief.add(rim);
+  // Contours interpolate the same two triangles used by PlaneGeometry, every 100 m.
+  const segments: number[] = [];
+  const intersectTriangle = (a: any, b: any, c: any) => {
+    const min = Math.min(a.y, b.y, c.y) + terrain.minElevation;
+    const max = Math.max(a.y, b.y, c.y) + terrain.minElevation;
+    for (let level = Math.ceil(min / 100) * 100; level <= max; level += 100) {
+      const y = level - terrain.minElevation;
+      const hits: any[] = [];
+      for (const [p, q] of [[a,b],[b,c],[c,a]]) {
+        if ((p.y <= y && q.y > y) || (q.y <= y && p.y > y)) hits.push(p.clone().lerp(q, (y - p.y) / (q.y - p.y)));
+      }
+      if (hits.length === 2) for (const hit of hits) segments.push(hit.x, hit.y + 4, hit.z);
+    }
+  };
+  for (let row = 0; row < height - 1; row++) for (let col = 0; col < width - 1; col++) {
+    const a = point(row, col), b = point(row + 1, col), c = point(row + 1, col + 1), d = point(row, col + 1);
+    intersectTriangle(a,b,d); intersectTriangle(b,c,d);
+  }
+  const contourGeometry = new THREE.BufferGeometry();
+  contourGeometry.setAttribute("position", new THREE.Float32BufferAttribute(segments, 3));
+  contours.add(new THREE.LineSegments(contourGeometry, new THREE.LineBasicMaterial({ color: 0xf7dbad, transparent: true, opacity: 0.18, depthWrite: false })));
+  return { relief, contours };
 }
 
 function addDecor(
@@ -387,6 +497,38 @@ export function TerrainView(props: TerrainViewProps) {
   propsRef.current = props;
   const [error, setError] = useState<string | null>(null);
   const [textureError, setTextureError] = useState<string | null>(null);
+  const [motion, setMotion] = useState(() => !window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  const [orbit, setOrbit] = useState(false);
+  const [contours, setContours] = useState(true);
+  const motionRef = useRef(motion);
+  const orbitRef = useRef(orbit);
+  motionRef.current = motion;
+  orbitRef.current = orbit;
+
+  useEffect(() => {
+    const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const change = () => { setMotion(!preference.matches); setOrbit(false); };
+    preference.addEventListener("change", change);
+    return () => preference.removeEventListener("change", change);
+  }, []);
+
+  const cameraPreset = (preset: "overview" | "top" | "focus") => {
+    const state = sceneRef.current;
+    if (!state) return;
+    setOrbit(false);
+    if (preset === "overview") { state.resetView(); return; }
+    if (preset === "top") {
+      const width = (props.terrain.meta.width - 1) * props.terrain.patch.cell_size_m[0];
+      state.flyTo(new THREE.Vector3(0, width * (state.camera.aspect < 1 ? 2.2 : 1.65), 1), new THREE.Vector3(0, 0, 0));
+      return;
+    }
+    const waypoint = props.waypoints.find(w => w.id === props.selectedWaypointId);
+    if (!waypoint) return;
+    const world = cellToWorld(waypoint.row, waypoint.col, props.terrain.patch);
+    const y = (props.terrain.elevation[waypoint.row * props.terrain.meta.width + waypoint.col] - props.terrain.minElevation) * props.exaggeration;
+    const target = new THREE.Vector3(world.x, y, world.z);
+    state.flyTo(target.clone().add(new THREE.Vector3(900, 1000, 1300)), target);
+  };
 
   useEffect(() => {
     try {
@@ -410,7 +552,7 @@ export function TerrainView(props: TerrainViewProps) {
 
     let renderer: any;
     try {
-      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     } catch (renderError) {
       setError(
         renderError instanceof Error
@@ -426,7 +568,7 @@ export function TerrainView(props: TerrainViewProps) {
     container.insertBefore(renderer.domElement, container.firstChild);
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0b0f14);
+    scene.fog = new THREE.FogExp2(0x111a20, 0.000025);
     const camera = new THREE.PerspectiveCamera(42, 1, 5, 40000);
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
@@ -435,24 +577,31 @@ export function TerrainView(props: TerrainViewProps) {
     controls.minDistance = 500;
     controls.maxDistance = 22000;
 
+    let flight: { from: any; to: any; fromTarget: any; toTarget: any; start: number } | null = null;
+    const flyTo = (position: any, target: any): void => {
+      if (!motionRef.current) { camera.position.copy(position); controls.target.copy(target); controls.update(); return; }
+      flight = { from: camera.position.clone(), to: position, fromTarget: controls.target.clone(), toTarget: target, start: performance.now() };
+    };
     const resetView = (): void => {
       const aspect = container.clientWidth / Math.max(1, container.clientHeight);
       const portrait = aspect < 1;
-      const scale = portrait ? 1.45 : 1;
-      camera.position.set(
-        widthMeters * (portrait ? 0.55 : 0.78) * scale,
-        widthMeters * (portrait ? 1.05 : 0.9) * scale,
-        depthMeters * (portrait ? 1.0 : 1.1) * scale,
-      );
-      controls.target.set(0, portrait ? 0 : 200, 0);
-      controls.update();
+      const scale = portrait ? 1.7 : 1;
+      flyTo(new THREE.Vector3(
+        widthMeters * (portrait ? 0.45 : 0.77) * scale,
+        widthMeters * (portrait ? 1.05 : 0.92) * scale,
+        depthMeters * (portrait ? 0.9 : 1.10) * scale,
+      ), new THREE.Vector3(0, portrait ? 150 : 350, 0));
     };
+    camera.position.set(widthMeters * 0.8, widthMeters, depthMeters * 1.3);
     resetView();
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.78));
-    const sun = new THREE.DirectionalLight(0xffead2, 0.65);
+    scene.add(new THREE.HemisphereLight(0xc9e4ef, 0x5a2b1d, 0.65));
+    const sun = new THREE.DirectionalLight(0xffddb7, 1.25);
     sun.position.set(-4000, 7000, -4000);
     scene.add(sun);
+    const rimLight = new THREE.DirectionalLight(0x7ab5c7, 0.35);
+    rimLight.position.set(4000, 2000, 3000);
+    scene.add(rimLight);
 
     const geometry = new THREE.PlaneGeometry(
       widthMeters,
@@ -483,13 +632,15 @@ export function TerrainView(props: TerrainViewProps) {
     geometry.computeVertexNormals();
 
     const materials: Record<TerrainSurface, any> = {
-      ctx: new THREE.MeshLambertMaterial({ side: THREE.DoubleSide }),
+      ctx: new THREE.MeshStandardMaterial({ color: 0xd8b49b, roughness: 0.95, metalness: 0, side: THREE.DoubleSide }),
       hillshade: new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }),
       slope: new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }),
       geology: new THREE.MeshLambertMaterial({ side: THREE.DoubleSide }),
     };
     const terrainMesh = new THREE.Mesh(geometry, materials.ctx);
     scene.add(terrainMesh);
+    const { relief: reliefGroup, contours: contourGroup } = buildRelief(terrain);
+    scene.add(reliefGroup, contourGroup);
 
     const mineralMaterial = new THREE.MeshBasicMaterial({
       side: THREE.DoubleSide,
@@ -498,6 +649,11 @@ export function TerrainView(props: TerrainViewProps) {
     scene.add(geologyGroup);
 
     const decorGroup = addDecor(scene, widthMeters, depthMeters);
+    const grid = new THREE.GridHelper(widthMeters * 2.8, 40, 0x34484c, 0x253339);
+    grid.position.y = -560;
+    grid.material.transparent = true;
+    grid.material.opacity = 0.12;
+    decorGroup.add(grid);
     const routeGroup = new THREE.Group();
     const markerGroup = new THREE.Group();
     scene.add(routeGroup);
@@ -515,6 +671,12 @@ export function TerrainView(props: TerrainViewProps) {
       materials,
       mineralMaterial,
       geologyGroup,
+      reliefGroup,
+      contourGroup,
+      routeSamples: [],
+      routePoints: [],
+      traveller: null,
+      flyTo,
       resetView,
     };
     sceneRef.current = state;
@@ -556,15 +718,17 @@ export function TerrainView(props: TerrainViewProps) {
         const unitName = String(
           featureProps.Unit_Name ??
             featureProps.unit_name ??
+            featureProps.unitdesc ??
             featureProps.Name ??
-            "Hesperian-Noachian transition unit",
+            "Unit name not provided",
         );
         const period = String(
-          featureProps.Period ?? featureProps.Era ?? "Hesperian / Noachian",
+          featureProps.Period ?? featureProps.Era ?? "period not provided in local pack",
         );
         const description = String(
           featureProps.Description ??
             featureProps.Unit_Desc ??
+            featureProps.unitdesc ??
             "Regional geologic unit clipped from USGS SIM 3292 (1:20,000,000).",
         );
 
@@ -626,6 +790,8 @@ export function TerrainView(props: TerrainViewProps) {
 
     let pointerDown: { x: number; y: number; time: number } | null = null;
     const onPointerDown = (event: PointerEvent): void => {
+      flight = null;
+      setOrbit(false);
       if (event.button !== 0) return;
       pointerDown = {
         x: event.clientX,
@@ -691,17 +857,53 @@ export function TerrainView(props: TerrainViewProps) {
       const width = container.clientWidth;
       const height = container.clientHeight;
       if (width === 0 || height === 0) return;
+      const wasPortrait = camera.aspect < 1;
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
       renderer.setSize(width, height, false);
+      if (wasPortrait !== (camera.aspect < 1)) resetView();
     };
     const observer = new ResizeObserver(resize);
     observer.observe(container);
     resize();
 
     let frame = 0;
-    const animate = (): void => {
+    let previousTime = performance.now();
+    let motionTime = 0;
+    const animate = (time: number): void => {
       frame = requestAnimationFrame(animate);
+      const delta = Math.min((time - previousTime) / 1000, 0.05);
+      previousTime = time;
+      if (document.hidden) return;
+      if (motionRef.current) motionTime += delta;
+      controls.autoRotate = orbitRef.current && motionRef.current && !flight;
+      controls.autoRotateSpeed = 0.38 * delta * 60;
+      if (flight) {
+        const t = motionRef.current ? Math.min(1, (time - flight.start) / 1400) : 1;
+        const ease = t * t * (3 - 2 * t);
+        camera.position.lerpVectors(flight.from, flight.to, ease);
+        controls.target.lerpVectors(flight.fromTarget, flight.toTarget, ease);
+        if (t === 1) flight = null;
+      }
+      for (const beacon of markerGroup.children) {
+        if (beacon.userData.phase === undefined) continue;
+        for (const node of beacon.children) {
+          if (node.userData.bob) {
+            node.position.y = 165 + Math.sin(motionTime * 1.8 + beacon.userData.phase) * 13;
+            node.rotation.y = motionTime * 0.4;
+          }
+          if (node.userData.pulse !== undefined) {
+            const pulse = node.userData.pulse;
+            const phase = (motionTime * 0.45 + pulse / 2 + beacon.userData.phase) % 1;
+            node.scale.setScalar(pulse === 0 ? 1 : 1 + phase * 2.2);
+            node.material.opacity = pulse === 0 ? 0.8 : (1 - phase) * 0.42;
+          }
+        }
+      }
+      for (const node of routeGroup.children) {
+        if (node.userData.flow !== undefined) positionOnRoute(state, (motionTime * 0.065 + node.userData.flow) % 1, node.position);
+      }
+      if (state.traveller) positionOnRoute(state, propsRef.current.progress, state.traveller.position);
       controls.update();
       renderer.render(scene, camera);
     };
@@ -730,6 +932,8 @@ export function TerrainView(props: TerrainViewProps) {
       disposeObject(terrainMesh);
       clearGroup(decorGroup);
       clearGroup(geologyGroup);
+      clearGroup(reliefGroup);
+      clearGroup(contourGroup);
       if (mineralMaterial.map) mineralMaterial.map.dispose();
       mineralMaterial.dispose();
       for (const material of Object.values(materials)) {
@@ -793,8 +997,14 @@ export function TerrainView(props: TerrainViewProps) {
     if (state) {
       state.terrainMesh.scale.y = props.exaggeration;
       state.geologyGroup.scale.y = props.exaggeration;
+      state.reliefGroup.scale.y = props.exaggeration;
+      state.contourGroup.scale.y = props.exaggeration;
     }
   }, [props.exaggeration]);
+
+  useEffect(() => {
+    if (sceneRef.current) sceneRef.current.contourGroup.visible = contours && !props.mineralBand && (props.surface === "ctx" || props.surface === "hillshade");
+  }, [contours, props.surface, props.mineralBand]);
 
   useEffect(() => {
     const state = sceneRef.current;
@@ -852,9 +1062,23 @@ export function TerrainView(props: TerrainViewProps) {
         </div>
       ) : null}
       {!error ? (
-        <div className="terrain-hint">
-          Drag to orbit · scroll to zoom · click terrain to set a point
+        <>
+        <div className="scene-toolbar" aria-label="3D viewing controls">
+          <div className="camera-buttons">
+            <button onClick={() => cameraPreset("overview")} title="Return to overview">↗ <span>Overview</span></button>
+            <button onClick={() => cameraPreset("top")} title="North-up overhead view">⊞ <span>Top view</span></button>
+            <button disabled={!props.selectedWaypointId} onClick={() => cameraPreset("focus")} title="Fly to the selected waypoint">⌖ <span>Focus point</span></button>
+          </div>
+          <div className="scene-toggles">
+            <button aria-pressed={orbit} disabled={!motion} onClick={() => setOrbit(v => !v)}>Orbit</button>
+            <button aria-pressed={contours} onClick={() => setContours(v => !v)} title="Derived 100 m elevation contours">Contours</button>
+            <button aria-pressed={motion} onClick={() => { setMotion(v => !v); setOrbit(false); }}>Motion {motion ? "on" : "off"}</button>
+          </div>
         </div>
+        <div className="terrain-hint">
+          Drag to orbit · scroll to zoom · click to place a point
+        </div>
+        </>
       ) : null}
     </div>
   );

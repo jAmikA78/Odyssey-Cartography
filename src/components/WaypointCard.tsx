@@ -36,21 +36,11 @@ export function WaypointCard({
   return (
     <article
       className={className}
-      tabIndex={0}
-      role="button"
-      aria-pressed={isSelected}
-      onClick={onSelect}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          onSelect();
-        }
-      }}
     >
       <div className="waypoint-heading">
-        <strong>
+        <button className="waypoint-select" type="button" aria-pressed={isSelected} onClick={onSelect}>
           {waypoint.label} · {waypoint.name}
-        </strong>
+        </button>
         <span className={blocked ? "chip chip-blocked" : "chip"}>
           {blocked ? "No-go" : "Traversable"}
         </span>

@@ -1,6 +1,6 @@
 # Demo and Submission
 
-Last updated: 2026-11-13
+Last updated: 2026-11-14
 
 ## Demo Goal
 
@@ -37,6 +37,14 @@ The demo must use the public, no-login build and local assets. Do not rely on a 
 
 Do not claim that the route is safe, optimal, or rover-approved.
 
+## Visual demo controls
+
+1. Open Layers & terrain to switch surfaces or inspect the existing mineral indices.
+2. Select Waypoints, select a point, then use Focus point to fly to it. Use Overview to return.
+3. Play the route preview, pause, and drag the elevation profile to inspect progress. Explain that the 24-second playback is compressed, not live data.
+4. Toggle Orbit for a presentation view. Motion off freezes ambient effects; the system reduced-motion setting is respected.
+5. Discover contains the existing helmet view, mission card, gallery, and sources.
+
 ## Deck Outline
 
 1. **Title:** Odyssey — Gale Crater Marswalk Planner.
@@ -45,7 +53,7 @@ Do not claim that the route is safe, optimal, or rover-approved.
 4. **Solution:** 3D terrain + A* + safety panel + waypoint cards.
 5. **Data:** Merged Gale DEM, CTX, derived hillshade and slope; local, attributed, offline-safe.
 6. **Demo evidence:** Route screenshot, blocked example, safety panel, mobile view.
-7. **Limits and next steps:** 20 m screening-resolution, unverified safety assumptions, future POV and calibration.
+7. **Limits and next steps:** 20 m screening-resolution, unverified safety assumptions, future calibration and broader coverage.
 
 ## 30-Second Video Option
 
@@ -94,9 +102,8 @@ Do not claim that AI generated verified scientific results.
 
 ## Known Gaps
 
-- POV imagery is not implemented.
-- The printable mission card is not implemented.
-- The original MOLA/THEMIS/geology overlay stack is deferred.
+- The original MOLA/THEMIS overlay stack is deferred.
+- POV gallery, printable mission card, regional geology, CRISM indices, and helmet view are present locally; verify the deployed version separately.
 - The radiation baseline is unverified.
 - The boxwork location is unverified.
 - The public site shows the demo only after merge and deploy.

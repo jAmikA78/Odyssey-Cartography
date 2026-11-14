@@ -1,6 +1,6 @@
 # Architecture
 
-Last updated: 2026-11-13
+Last updated: 2026-11-14
 
 ## Overview
 
@@ -104,6 +104,7 @@ The patch is **not verified** as the challenge's boxwork location.
 | Surface | File | Role |
 | --- | --- | --- |
 | CTX | `data/texture_ctx.jpg` (466 × 466) | Optical context, color-mapped as RGB |
+| Visor CTX detail | `data/texture_ctx_detail.jpg` (932 × 932) | Separate optical context in the first-person visor; not used for CRISM registration or routing |
 | Hillshade | `data/hillshade.png` (238 × 238) | Shaded relief, azimuth 315°, altitude 45° |
 | Slope | `data/slope_preview.png` (238 × 238) | Slope screening display, clamped at 45° |
 
@@ -118,7 +119,7 @@ The slope raster is derived from the DEM as `atan(hypot(dz/dx, dz/dsouth))`, wit
 - A start or destination on a no-go cell returns a blocked result with a specific reason.
 - Diagonal moves are rejected when either orthogonal neighbor is no-go, preventing corner cutting.
 - Step distance is computed from the metre grid: 19.924 m orthogonal, about 28.18 m diagonal.
-- Step cost is `stepMeters × (1 + 4 × (slope / maxSlopeDeg)²)`.
+- Step cost is `stepMeters × (1 + slopeWeight × (slope / maxSlopeDeg)² + climbWeight × max(0, elevationDelta) / stepMeters + cautionExtra)`. Existing balanced, distance-priority, and gentler-slope modes use weights (4, 3.5, 0.6), (0.6, 0.5, 0), and (10, 6.5, 1.5); cautionExtra applies above 15°. Distance-priority still includes penalties and is not a guarantee of the geometrically shortest path.
 - Heuristic is the Euclidean grid distance to the goal in metres.
 - Route metrics include distance, duration at 1.2 km/h, maximum and mean slope, elevation gain/loss, steep fraction above 15°, and warnings.
 
@@ -133,7 +134,7 @@ WP1 (row 65, col 65) is a blocked example: its 22.19° slope makes it no-go at t
 - `walkHours = distanceKm / walkSpeedKmH`
 - `requiredSuitHours = walkHours × (1 + suitReserve)`
 - `doseMsV = baselineDoseRatePerDay × walkHours / 24`
-- `status`: `blocked` when the route is not found or slope exceeds the limit; `caution` when suit-hours exceed nominal, dose exceeds the budget, or walk time exceeds the nominal EVA; otherwise `normal`.
+- `status`: `blocked` for no route, exceeded slope, maximum walk/suit duration, or dose budget; `caution` for exceeded nominal walk/suit duration; otherwise `normal`. See the safety model for formulas.
 
 See [../docs/safety-model.md](../docs/safety-model.md) for the full rule table and non-claims.
 
@@ -254,13 +255,24 @@ The standalone `index.html` / `viewer.js` is kept as a reference and fallback vi
 | No path at the current limit | Return a blocked route and suggest raising the limit |
 | WebGL unavailable | Show a fallback message; do not crash the app |
 
+## Expedition rendering and interaction
+
+`TerrainView` keeps the r128 boundary and the original metre-grid coordinates. Additional groups contain a decorative edge skirt, derived 100 m contours, waypoint rings/pins, and route tubes. The skirt has no subsurface meaning. Contours interpolate the same triangulated DEM and are hidden on scientific false-color surfaces. CTX lighting/tint is a display treatment; slope and mineral maps remain unlit.
+
+Routes remain piecewise linear through the computed path; no smoothing can cut across blocked cells. `src/lib/traverse.ts` supplies cumulative planar metre distances and raw DEM samples. The profile and moving traveller use that distance axis. Replay takes 24 seconds, independent of estimated EVA time, with explicit play/pause and scrubbing. No telemetry is implied. Route changes reset playback; hidden tabs pause progression.
+
+Camera presets interpolate for 1.4 seconds, while reduced motion makes the change immediate. Orbit is opt-in and stops on direct manipulation. Ambient waypoint and route motion respects the system preference and manual Motion toggle. Rendering resources and listeners are disposed at unmount.
+
+`App` groups controls into Plan, Waypoints, and Discover panels. Layer selection clears a mineral overlay to make the selected surface visible. Keyboard-selectable waypoint buttons are separate from start/destination actions. No shared data types were migrated.
+
+`npm test` runs six data-backed regressions using the existing TypeScript compiler and Node test runner; no dependency was added.
+
 ## Deferred Work
 
 - Full 20 km AOI and the original 256×256 MOLA/THEMIS/CTX overlay pipeline.
 - Leaflet 2D layer view and layer toggles.
-- POV imagery and printable mission card.
-- USGS geology, thermal context, and live NOAA Kp.
-- Automated test harness and CI checks beyond build/deploy.
+- Thermal context and live NOAA Kp.
+- CI integration for the local regression test command.
 
 ## Open Engineering Questions
 

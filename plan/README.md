@@ -1,18 +1,18 @@
 # Odyssey Execution Plan
 
-Last updated: 2026-11-13
+Last updated: 2026-11-14
 
 This directory is the execution source of truth for the Odyssey hackathon build. Research evidence lives in `docs/`; public-facing claims live in `README.md`.
 
 ## Current Status
 
 - Research, solution definition, and documentation: complete and reconciled with the offline demo.
-- Public Pages site: currently the scaffold on `main` at <https://jamika78.github.io/Odyssey-Cartography/>.
-- Offline 3D demo: implemented on `feat/gale-3d-offline`; verified locally at desktop and 390 px widths.
+- Public Pages site: deployment state not checked during this local redesign.
+- Offline 3D demo: integrated in the checked-out `main` baseline. New expedition visuals are local changes pending A review.
 - Terrain pack: `public/data/gale/` extracted from `gale-3d-offline.zip`; all checksums pass.
-- Runtime: 3D terrain, three surfaces, A* route, safety screening, waypoint cards, caveats, and local sources.
-- Not implemented: POV imagery, printable mission card, the original CTX/MOLA/THEMIS overlay stack, full 20 km AOI pipeline, geology display, live NOAA Kp.
-- Public demo: the Pages site follows `main`; it shows the offline demo only after this branch is merged and deployed.
+- Runtime: terrain, CTX/hillshade/slope/geology, CRISM indices, A* routing, safety, waypoints, gallery, mission card, helmet view, and local sources. The redesign adds animated beacons, camera presets, route playback, and a DEM profile.
+- Deferred: MOLA/THEMIS overlay stack, full 20 km AOI pipeline, live NOAA Kp.
+- Public demo: Pages follows `main`; the new local changes are not deployed.
 - Feature freeze: Saturday 10:00 Africa/Cairo.
 - Final submission: before Saturday 13:00 Africa/Cairo.
 
@@ -66,7 +66,7 @@ Project lead and submission owner: the team lead. Only A merges to `main`.
 - Live Mars weather or radiation prediction.
 - Multi-user accounts, backend services, or persistent storage.
 - Full Gale Crater coverage or global Mars routing.
-- POV imagery and a printable mission card in this iteration.
+- Operational navigation or scientifically calibrated mineral/radiation interpretation.
 
 ## Implemented Demo Baseline
 
@@ -108,6 +108,10 @@ The values above are demo results from the local pack, not rover telemetry.
 - [../docs/data-sources.md](../docs/data-sources.md)
 - [../docs/safety-model.md](../docs/safety-model.md)
 - [../docs/demo-and-submission.md](../docs/demo-and-submission.md)
+
+## Visual refresh
+
+The user requested a broad visual and 3D upgrade on 2026-11-14. No dependency, data-pack, CRS, routing-rule, or frozen shared-type change is introduced. See [../docs/visual-experience.md](../docs/visual-experience.md). A review remains required before merge.
 
 ## Change Control
 

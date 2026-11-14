@@ -18,6 +18,11 @@ export function SourcesPanel() {
           visual context only.
         </li>
         <li>
+          Visor CTX: Caltech Murray Lab global mosaic via Esri, NASA, JPL, and
+          MSSS; local 932 px crop for visual context only. The visor uses the
+          same map bounds but a separate image registration.
+        </li>
+        <li>
           Minerals: MRO CRISM MTRDR FRT000058A3 (2007), 21 spectral summary
           indices at 18 m, co-registered to the imagery. Candidate signatures,
           not abundances or soil chemistry; no in-situ soil measurements exist
