@@ -21,7 +21,7 @@ const NEIGHBORS: ReadonlyArray<readonly [number, number]> = [
 
 const STEEP_SLOPE_DEG = 15;
 
-export type RouteMode = "balanced" | "shortest" | "safest";
+export type RouteMode = "balanced" | "shortest" | "gentler" | "safest";
 
 const MODE_WEIGHTS: Record<
   RouteMode,
@@ -29,6 +29,7 @@ const MODE_WEIGHTS: Record<
 > = {
   balanced: { slopePenalty: 4, climbPenalty: 3.5, cautionPenalty: 0.6 },
   shortest: { slopePenalty: 0.6, climbPenalty: 0.5, cautionPenalty: 0 },
+  gentler: { slopePenalty: 4, climbPenalty: 0.5, cautionPenalty: 0 },
   safest: { slopePenalty: 10, climbPenalty: 6.5, cautionPenalty: 1.5 },
 };
 

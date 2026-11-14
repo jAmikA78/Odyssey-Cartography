@@ -1,0 +1,44 @@
+/* Combined expedition layout: keep the map usable at every width. */
+.app-main { display: flex; align-items: stretch; }
+.feature-rail { width: 11.5rem; flex: 0 0 11.5rem; border-right: 1px solid var(--panel-border); padding-right: .45rem; }
+.tool-panel { width: clamp(19rem, 23vw, 23rem); flex: 0 0 clamp(19rem, 23vw, 23rem); padding-right: .5rem; }
+.tool-panel .terrain-controls.inline { position: static; width: 100%; max-width: none; max-height: none; overflow: visible; display: block; }
+.tool-panel .terrain-controls.inline .control-block { margin-bottom: .55rem; }
+.tool-panel .route-comparison { max-width: 100%; }
+.map-stage { flex: 1; min-width: 0; }
+.stats-bar { flex-wrap: wrap; }
+.stats-bar > div { min-width: 6.5rem; }
+.caveat-banner .caveat-toggle { font: inherit; color: var(--accent-soft); text-decoration: underline; }
+.inspect-card { z-index: 6; }
+.map-title, .map-legend { transition: opacity .4s ease; }
+.map-stage.walking .map-title, .map-stage.walking .map-legend { opacity: 0; pointer-events: none; }
+
+@media (max-width: 1050px) {
+  .app-main { height: auto; min-height: 0; display: flex; flex-direction: column; }
+  .feature-rail { order: 0; width: 100%; flex: none; flex-direction: row; gap: .4rem; min-height: 0; border-right: 0; padding: 0 0 .35rem; overflow-x: auto; overflow-y: hidden; }
+  .rail-group { flex: none; flex-direction: row; align-items: stretch; margin: 0; gap: .3rem; }
+  .rail-label { display: none; }
+  .rail-item { flex: none; min-width: max-content; padding: .5rem .7rem; }
+  .rail-item small { display: none; }
+  .map-stage { order: 1; width: 100%; height: auto; min-height: 0; }
+  .terrain-viewport { flex: none; height: min(62vh, 620px); min-height: 360px; }
+  .tool-panel { order: 2; width: 100%; flex: none; max-height: none; overflow: visible; display: grid; gap: .8rem; padding: 0; }
+  .tool-panel .panel, .tool-panel .terrain-controls.inline { max-width: none; }
+  .stats-bar { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+@media (max-width: 600px) {
+  .app-main { padding: 10px; gap: 10px; }
+  .rail-item { font-size: .75rem; }
+  .terrain-viewport { height: 53vh; min-height: 320px; }
+  .map-title { top: 13px; left: 14px; }
+  .map-title h2 { font-size: 23px; }
+  .scene-toolbar { bottom: 30px; left: 10px; }
+  .scene-toolbar button { padding: 6px; font-size: 10px; }
+  .scene-toolbar button span { display: none; }
+  .map-legend { display: none; }
+  .traverse-profile { min-height: 0; padding: 10px; }
+  .stats-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .app-header { padding: 12px; min-height: 0; }
+  .caveat-banner { padding: 8px 12px; }
+}
