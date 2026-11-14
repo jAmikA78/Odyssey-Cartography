@@ -7,6 +7,7 @@ import type {
   GaleRouteResult,
   GaleTerrain,
   GaleWaypoint,
+  GeologyInfo,
   TerrainSurface,
 } from "../types";
 
@@ -27,6 +28,7 @@ export interface TerrainViewProps {
   onPick: (cell: Cell) => void;
   onHover: (cell: Cell | null) => void;
   onWaypointSelect: (id: string) => void;
+  onGeologyLoaded?: (info: GeologyInfo) => void;
 }
 
 interface SceneState {
@@ -123,6 +125,90 @@ function makeLabel(text: string, color: string): any {
   sprite.scale.set(260, 130, 1);
   sprite.renderOrder = 40;
   return sprite;
+}
+
+function drawPolygonRing(
+  ctx: CanvasRenderingContext2D,
+  ring: number[][],
+  bounds: [number, number, number, number],
+  size: number,
+): void {
+  const [west, south, east, north] = bounds;
+  const lonSpan = Math.max(1e-9, east - west);
+  const latSpan = Math.max(1e-9, north - south);
+  ring.forEach((coord, idx) => {
+    const u = (coord[0] - west) / lonSpan;
+    const v = 1 - (coord[1] - south) / latSpan;
+    const x = u * size;
+    const y = v * size;
+    if (idx === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.closePath();
+}
+
+function buildGeologyCanvas(
+  geojson: any,
+  bounds: [number, number, number, number],
+  unitCode: string,
+  unitName: string,
+): HTMLCanvasElement {
+  const size = 512;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return canvas;
+
+  ctx.fillStyle = "#5a4636";
+  ctx.fillRect(0, 0, size, size);
+
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
+  ctx.lineWidth = 1;
+  for (let step = 64; step < size; step += 64) {
+    ctx.beginPath();
+    ctx.moveTo(step, 0);
+    ctx.lineTo(step, size);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, step);
+    ctx.lineTo(size, step);
+    ctx.stroke();
+  }
+
+  const features = Array.isArray(geojson?.features) ? geojson.features : [];
+  for (const feature of features) {
+    const geom = feature?.geometry;
+    if (!geom) continue;
+    ctx.beginPath();
+    if (geom.type === "Polygon" && Array.isArray(geom.coordinates)) {
+      for (const ring of geom.coordinates) {
+        drawPolygonRing(ctx, ring, bounds, size);
+      }
+    } else if (geom.type === "MultiPolygon" && Array.isArray(geom.coordinates)) {
+      for (const poly of geom.coordinates) {
+        for (const ring of poly) {
+          drawPolygonRing(ctx, ring, bounds, size);
+        }
+      }
+    }
+    ctx.fillStyle = "rgba(218, 138, 62, 0.55)";
+    ctx.fill("evenodd");
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = "#ffbe6b";
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = "rgba(15, 22, 34, 0.72)";
+  ctx.fillRect(14, 14, size - 28, 52);
+  ctx.fillStyle = "#ffbe6b";
+  ctx.font = "bold 16px system-ui, sans-serif";
+  ctx.fillText(`USGS SIM 3292 · Unit ${unitCode}`, 24, 36);
+  ctx.fillStyle = "#e6edf3";
+  ctx.font = "12px system-ui, sans-serif";
+  ctx.fillText(`${unitName} (1:20M regional context)`, 24, 55);
+
+  return canvas;
 }
 
 function rebuildRoute(
@@ -400,6 +486,7 @@ export function TerrainView(props: TerrainViewProps) {
       ctx: new THREE.MeshLambertMaterial({ side: THREE.DoubleSide }),
       hillshade: new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }),
       slope: new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }),
+      geology: new THREE.MeshLambertMaterial({ side: THREE.DoubleSide }),
     };
     const terrainMesh = new THREE.Mesh(geometry, materials.ctx);
     scene.add(terrainMesh);
@@ -433,8 +520,12 @@ export function TerrainView(props: TerrainViewProps) {
     sceneRef.current = state;
 
     const loader = new THREE.TextureLoader();
-    const surfaces: TerrainSurface[] = ["ctx", "hillshade", "slope"];
-    for (const surface of surfaces) {
+    const rasterSurfaces: Array<"ctx" | "hillshade" | "slope"> = [
+      "ctx",
+      "hillshade",
+      "slope",
+    ];
+    for (const surface of rasterSurfaces) {
       loader.load(
         assetUrl(SURFACE_TEXTURES[surface]),
         (texture: any) => {
@@ -453,6 +544,51 @@ export function TerrainView(props: TerrainViewProps) {
         },
       );
     }
+
+    void fetch(assetUrl("data/gale/data/geology.geojson"))
+      .then((res) => (res.ok ? res.json() : null))
+      .then((geojson) => {
+        if (disposed || !geojson) return;
+        const featureProps = geojson?.features?.[0]?.properties ?? {};
+        const unitCode = String(
+          featureProps.Unit ?? featureProps.unit ?? featureProps.UNIT ?? "HNt",
+        );
+        const unitName = String(
+          featureProps.Unit_Name ??
+            featureProps.unit_name ??
+            featureProps.Name ??
+            "Hesperian-Noachian transition unit",
+        );
+        const period = String(
+          featureProps.Period ?? featureProps.Era ?? "Hesperian / Noachian",
+        );
+        const description = String(
+          featureProps.Description ??
+            featureProps.Unit_Desc ??
+            "Regional geologic unit clipped from USGS SIM 3292 (1:20,000,000).",
+        );
+
+        const canvas = buildGeologyCanvas(
+          geojson,
+          terrain.patch.bounds_lonlat_deg,
+          unitCode,
+          unitName,
+        );
+        const geoTex = new THREE.CanvasTexture(canvas);
+        geoTex.encoding = THREE.sRGBEncoding;
+        materials.geology.map = geoTex;
+        materials.geology.needsUpdate = true;
+
+        propsRef.current.onGeologyLoaded?.({
+          unitCode,
+          unitName,
+          period,
+          description,
+        });
+      })
+      .catch(() => {
+        if (!disposed) setTextureError("geology");
+      });
 
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
