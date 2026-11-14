@@ -147,7 +147,14 @@ export interface SafetyEvaluation {
   assumptions: string[];
 }
 
-export type TerrainSurface = "ctx" | "hillshade" | "slope";
+export interface GeologyInfo {
+  unitCode: string;
+  unitName: string;
+  period: string;
+  description: string;
+}
+
+export type TerrainSurface = "ctx" | "hillshade" | "slope" | "geology";
 
 export interface TerrainPick {
   row: number;

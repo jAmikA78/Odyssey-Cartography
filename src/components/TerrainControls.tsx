@@ -2,6 +2,7 @@ import type {
   GaleTerrain,
   GeologyUnit,
   MineralsCatalog,
+  GeologyInfo,
   TerrainSurface,
 } from "../types";
 import { cellLabel, type Cell } from "../lib/geo";
@@ -23,18 +24,21 @@ interface TerrainControlsProps {
   showGeology: boolean;
   onShowGeologyChange: (show: boolean) => void;
   geologyUnit: GeologyUnit | null;
+  geologyInfo: GeologyInfo | null;
 }
 
 const SURFACES: Array<{ id: TerrainSurface; label: string }> = [
   { id: "ctx", label: "CTX" },
   { id: "hillshade", label: "Hillshade" },
   { id: "slope", label: "Slope" },
+  { id: "geology", label: "Geology" },
 ];
 
 const SURFACE_NOTES: Record<TerrainSurface, string> = {
   ctx: "CTX mosaic · visual context only",
   hillshade: "Hillshade · sun azimuth 315°, altitude 45°",
   slope: "Slope degrees · 0–45° display clamp",
+  geology: "USGS SIM 3292 · 1:20M regional geologic map (broad context)",
 };
 
 export function TerrainControls({
@@ -54,6 +58,7 @@ export function TerrainControls({
   showGeology,
   onShowGeologyChange,
   geologyUnit,
+  geologyInfo,
 }: TerrainControlsProps) {
   const index = hoverCell
     ? hoverCell.row * terrain.meta.width + hoverCell.col
@@ -91,7 +96,9 @@ export function TerrainControls({
         <p className="control-note">
           {mineralBand
             ? "Mineral overlay active - clear it to change the base surface."
-            : SURFACE_NOTES[surface]}
+            : surface === "geology" && geologyInfo
+              ? `USGS SIM 3292 · Unit ${geologyInfo.unitCode} (${geologyInfo.unitName})`
+              : SURFACE_NOTES[surface]}
         </p>
       </div>
 
@@ -149,6 +156,7 @@ export function TerrainControls({
               : "Regional geology unit boundary. Broad context, not local hazards."}
           </p>
         ) : null}
+
       </div>
 
       <div className="control-block">
@@ -202,8 +210,8 @@ export function TerrainControls({
         <p className="control-note">
           {Math.round(terrain.minElevation)} to{" "}
           {Math.round(terrain.maxElevation)} m ·{" "}
-          {((terrain.meta.width - 1) * terrain.meta.metersPerCell / 1000).toFixed(2)} km
-          across
+          {(((terrain.meta.width - 1) * terrain.meta.metersPerCell) / 1000).toFixed(2)}{" "}
+          km across
         </p>
       </div>
     </div>

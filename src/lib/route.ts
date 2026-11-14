@@ -1,4 +1,9 @@
-import type { GaleRouteResult, GaleTerrain, RoutePoint } from "../types";
+import type {
+  GaleRouteResult,
+  GaleTerrain,
+  RoutePoint,
+  SafetyConfig,
+} from "../types";
 import { buildNoGo } from "./gale";
 import { cellStepMeters, gridIndex, inBounds, type Cell } from "./geo";
 import { DEFAULT_SAFETY } from "./safety";
@@ -15,7 +20,17 @@ const NEIGHBORS: ReadonlyArray<readonly [number, number]> = [
 ];
 
 const STEEP_SLOPE_DEG = 15;
-const DEFAULT_SLOPE_PENALTY = 4;
+
+export type RouteMode = "balanced" | "shortest" | "safest";
+
+const MODE_WEIGHTS: Record<
+  RouteMode,
+  { slopePenalty: number; climbPenalty: number; cautionPenalty: number }
+> = {
+  balanced: { slopePenalty: 4, climbPenalty: 3.5, cautionPenalty: 0.6 },
+  shortest: { slopePenalty: 0.6, climbPenalty: 0.5, cautionPenalty: 0 },
+  safest: { slopePenalty: 10, climbPenalty: 6.5, cautionPenalty: 1.5 },
+};
 
 class MinHeap {
   private indices: number[] = [];
@@ -108,6 +123,8 @@ function blockedResult(
 export interface RouteOptions {
   maxSlopeDeg?: number;
   slopePenalty?: number;
+  safetyConfig?: SafetyConfig;
+  mode?: RouteMode;
 }
 
 export function planRoute(
@@ -116,8 +133,11 @@ export function planRoute(
   goal: Cell,
   options: RouteOptions = {},
 ): GaleRouteResult {
-  const maxSlopeDeg = options.maxSlopeDeg ?? DEFAULT_SAFETY.maxSlopeDeg;
-  const slopePenalty = options.slopePenalty ?? DEFAULT_SLOPE_PENALTY;
+  const config = options.safetyConfig ?? DEFAULT_SAFETY;
+  const maxSlopeDeg = options.maxSlopeDeg ?? config.maxSlopeDeg;
+  const mode = options.mode ?? "balanced";
+  const weights = MODE_WEIGHTS[mode];
+  const slopePenalty = options.slopePenalty ?? weights.slopePenalty;
   const width = terrain.meta.width;
   const height = terrain.meta.height;
 
@@ -194,8 +214,22 @@ export function planRoute(
         { row: nextRow, col: nextCol },
         terrain.patch,
       );
-      const ratio = terrain.slope[nextIndex] / maxSlopeDeg;
-      const stepCost = stepMeters * (1 + slopePenalty * ratio * ratio);
+      const slopeDeg = terrain.slope[nextIndex];
+      const ratio = slopeDeg / maxSlopeDeg;
+      const climbM = Math.max(
+        0,
+        terrain.elevation[nextIndex] - terrain.elevation[current],
+      );
+      const climbRatio = climbM / Math.max(1, stepMeters);
+      const cautionExtra =
+        slopeDeg > STEEP_SLOPE_DEG ? weights.cautionPenalty : 0;
+
+      const stepCost =
+        stepMeters *
+        (1 +
+          slopePenalty * ratio * ratio +
+          weights.climbPenalty * climbRatio +
+          cautionExtra);
       const tentative = gScore[current] + stepCost;
 
       if (tentative < gScore[nextIndex]) {
@@ -261,7 +295,7 @@ export function planRoute(
   }
 
   const distanceKm = distanceM / 1000;
-  const durationH = distanceKm / DEFAULT_SAFETY.walkSpeedKmH;
+  const durationH = distanceKm / config.walkSpeedKmH;
   const avgSlope = pathIndices.length > 0 ? slopeSum / pathIndices.length : 0;
   const steepFraction =
     pathIndices.length > 0 ? steepCells / pathIndices.length : 0;
@@ -272,9 +306,9 @@ export function planRoute(
       `Route crosses cells above ${STEEP_SLOPE_DEG}°; treat this as slope screening, not trafficability.`,
     );
   }
-  if (durationH > DEFAULT_SAFETY.nominalEvaHours) {
+  if (durationH > config.nominalEvaHours) {
     warnings.push(
-      `Walking time exceeds the nominal ${DEFAULT_SAFETY.nominalEvaHours} h EVA before suit reserve.`,
+      `Walking time exceeds the nominal ${config.nominalEvaHours} h EVA before suit reserve.`,
     );
   }
   if (steepFraction > 0.25) {
