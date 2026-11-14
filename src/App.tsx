@@ -47,6 +47,11 @@ const ROUTE_MODES: Array<{ id: RouteMode; label: string; hint: string }> = [
     hint: "Minimizes distance while staying within the max slope limit.",
   },
   {
+    id: "gentler",
+    label: "Gentler slopes",
+    hint: "Distance-first like Shortest, but steers away from steep slopes.",
+  },
+  {
     id: "safest",
     label: "Safest & Easiest",
     hint: "Strongly avoids steep slopes (>15°) and heavy climbs.",
@@ -63,10 +68,12 @@ function App() {
   const [surface, setSurface] = useState<TerrainSurface>("ctx");
   const [exaggeration, setExaggeration] = useState(1.5);
   const [maxSlopeDeg, setMaxSlopeDeg] = useState(DEFAULT_SAFETY.maxSlopeDeg);
-  const [routeMode, setRouteMode] = useState<RouteMode>("balanced");
+
+  const [routeMode, setRouteMode] = useState<RouteMode>("shortest");
+
   const [start, setStart] = useState<Cell | null>(null);
   const [goal, setGoal] = useState<Cell | null>(null);
-  const [pickMode, setPickMode] = useState<"start" | "goal">("start");
+  const [pickMode, setPickMode] = useState<"inspect" | "start" | "goal">("inspect");
   const [selectedWaypointId, setSelectedWaypointId] = useState<string | null>(
     null,
   );
@@ -81,6 +88,11 @@ function App() {
   const [mineralMask, setMineralMask] = useState<Float32Array | null>(null);
   const [showGeology, setShowGeology] = useState(false);
   const [geologyUnit, setGeologyUnit] = useState<GeologyUnit | null>(null);
+  const [walkPlaying, setWalkPlaying] = useState(false);
+  const [walkProgress, setWalkProgress] = useState<number | null>(null);
+  const [walkResetKey, setWalkResetKey] = useState(0);
+  const [inspectCell, setInspectCell] = useState<Cell | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -159,6 +171,8 @@ function App() {
   }, [mineralBand]);
 
 
+
+
   const effectiveSafetyConfig = useMemo(
     () => ({ ...safetyConfig, maxSlopeDeg }),
     [safetyConfig, maxSlopeDeg],
@@ -178,6 +192,11 @@ function App() {
     [route, effectiveSafetyConfig],
   );
 
+  const handleWalkProgress = (progress: number | null): void => {
+    setWalkProgress(progress);
+    if (progress !== null && progress >= 1) setWalkPlaying(false);
+  };
+
   const handlePick = (cell: Cell): void => {
     const waypoint = waypoints.find(
       (candidate) =>
@@ -185,11 +204,15 @@ function App() {
     );
     if (waypoint) setSelectedWaypointId(waypoint.id);
     if (pickMode === "start") {
+      setWalkPlaying(false);
       setStart(cell);
-      setPickMode("goal");
-    } else {
+      setPickMode("inspect");
+    } else if (pickMode === "goal") {
+      setWalkPlaying(false);
       setGoal(cell);
+      setPickMode("inspect");
     }
+    // inspect mode: pin + info card only, route untouched
   };
 
   const handleWaypointSelect = (id: string): void => {
@@ -197,17 +220,20 @@ function App() {
   };
 
   const handleSetStart = (waypoint: GaleWaypoint): void => {
+    setWalkPlaying(false);
     setStart({ row: waypoint.row, col: waypoint.col });
     setSelectedWaypointId(waypoint.id);
-    setPickMode("goal");
+    setPickMode("inspect");
   };
 
   const handleSetGoal = (waypoint: GaleWaypoint): void => {
+    setWalkPlaying(false);
     setGoal({ row: waypoint.row, col: waypoint.col });
     setSelectedWaypointId(waypoint.id);
   };
 
   const handleUseDemo = (): void => {
+    setWalkPlaying(false);
     const demoStart =
       waypoints.find((waypoint) => waypoint.label === "WP2") ?? waypoints[1];
     const demoGoal =
@@ -217,15 +243,16 @@ function App() {
       setGoal({ row: demoGoal.row, col: demoGoal.col });
       setSelectedWaypointId(demoStart.id);
       setMaxSlopeDeg(20);
-      setRouteMode("balanced");
+      setRouteMode("shortest");
     }
   };
 
   const handleClear = (): void => {
+    setWalkPlaying(false);
     setStart(null);
     setGoal(null);
     setSelectedWaypointId(null);
-    setPickMode("start");
+    setPickMode("inspect");
   };
 
   const activeModeHint =
@@ -264,8 +291,27 @@ function App() {
                 onPick={handlePick}
                 onHover={setHoverCell}
                 onWaypointSelect={handleWaypointSelect}
+
                 onGeologyLoaded={setGeologyInfo}
+
+                onInspect={setInspectCell}
+                inspectCell={inspectCell}
+                walkPlaying={walkPlaying}
+                walkResetKey={walkResetKey}
+                onWalkProgress={handleWalkProgress}
+
               />
+              {inspectCell ? (
+                <InspectCard
+                  cell={inspectCell}
+                  terrain={terrain}
+                  mineralBand={mineralBand}
+                  mineralValues={mineralValues}
+                  mineralMask={mineralMask}
+                  maxSlopeDeg={maxSlopeDeg}
+                  onClose={() => setInspectCell(null)}
+                />
+              ) : null}
               <TerrainControls
                 terrain={terrain}
                 surface={surface}
@@ -337,8 +383,18 @@ function App() {
             goal={goal}
             pickMode={pickMode}
             onPickModeChange={setPickMode}
+            walkPlaying={walkPlaying}
+            walkProgress={walkProgress}
+            onToggleWalk={() => setWalkPlaying((playing) => !playing)}
+            onRestartWalk={() => {
+              setWalkPlaying(false);
+              setWalkResetKey((key) => key + 1);
+            }}
             maxSlopeDeg={maxSlopeDeg}
-            onMaxSlopeChange={setMaxSlopeDeg}
+            onMaxSlopeChange={(value) => {
+              setWalkPlaying(false);
+              setMaxSlopeDeg(value);
+            }}
             route={route}
             showRoute={showRoute}
             onShowRouteChange={setShowRoute}
@@ -346,7 +402,21 @@ function App() {
             onClear={handleClear}
           />
 
-          <SafetyPanel safety={safety} route={route} config={effectiveSafetyConfig} />
+          <button
+            type="button"
+            className="ghost-button details-toggle"
+            onClick={() => setShowDetails((show) => !show)}
+          >
+            {showDetails ? "Hide advanced details" : "Show advanced details"}
+          </button>
+
+          {showDetails ? (
+            <SafetyPanel
+              safety={safety}
+              route={route}
+              config={effectiveSafetyConfig}
+            />
+          ) : null}
 
           <MissionCard
             terrain={terrain}
@@ -411,7 +481,8 @@ function App() {
 
           <PovGallery />
 
-          <SourcesPanel />
+          {showDetails ? <SourcesPanel /> : null}
+
         </aside>
       </main>
 
@@ -423,6 +494,75 @@ function App() {
           and numbers remain the team&apos;s responsibility to verify.
         </p>
       </footer>
+    </div>
+  );
+}
+
+
+interface InspectCardProps {
+  cell: Cell;
+  terrain: GaleTerrain;
+  mineralBand: string | null;
+  mineralValues: Float32Array | null;
+  mineralMask: Float32Array | null;
+  maxSlopeDeg: number;
+  onClose: () => void;
+}
+
+function InspectCard({
+  cell,
+  terrain,
+  mineralBand,
+  mineralValues,
+  mineralMask,
+  maxSlopeDeg,
+  onClose,
+}: InspectCardProps) {
+  const index = cell.row * terrain.meta.width + cell.col;
+  const elevation = terrain.elevation[index];
+  const slope = terrain.slope[index];
+  const mineralValue =
+    mineralBand && mineralValues && mineralValues.length > index
+      ? mineralValues[index]
+      : null;
+  const mineralFilled =
+    mineralMask && mineralMask.length > index ? mineralMask[index] === 0 : false;
+
+  return (
+    <div className="inspect-card" role="status">
+      <button
+        type="button"
+        className="inspect-close"
+        aria-label="Close pinned point"
+        onClick={onClose}
+      >
+        ×
+      </button>
+      <span className="control-label">Pinned point</span>
+      <p className="inspect-line">{cellLabel(cell)}</p>
+      <p className="inspect-line">
+        Elevation {Math.round(elevation)} m · Slope {slope.toFixed(1)}°
+      </p>
+      {mineralBand ? (
+        <p className="inspect-line">
+          {mineralBand}:{" "}
+          {mineralFilled
+            ? "no measurement (gap-filled)"
+            : mineralValue !== null
+              ? mineralValue.toPrecision(3)
+              : "loading…"}
+        </p>
+      ) : (
+        <p className="inspect-note">
+          Pick a mineral layer to read its index here.
+        </p>
+      )}
+      <p className="inspect-note">
+        {slope > maxSlopeDeg
+          ? `No-go above the ${maxSlopeDeg}° limit at this point.`
+          : "Within the current slope limit."}{" "}
+        Click anywhere else to move the pin.
+      </p>
     </div>
   );
 }
