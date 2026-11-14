@@ -330,3 +330,335 @@
     display: none !important;
   }
 }
+/* First-Person 3D Helmet Visor HUD (Mars Street-View) */
+.hud-launch-panel {
+  border-color: rgba(73, 255, 226, 0.35);
+}
+
+.hud-launch-btn {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border-radius: 6px;
+  border: 1px solid #49ffe2;
+  background: rgba(73, 255, 226, 0.16);
+  color: #e6edf3;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.hud-launch-btn:hover:not(:disabled) {
+  background: rgba(73, 255, 226, 0.28);
+}
+
+.hud-launch-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.visor-fullscreen-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2500;
+  background: #1a0d08;
+  overflow: hidden;
+  user-select: none;
+}
+
+.visor-3d-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+}
+
+.visor-3d-canvas:active {
+  cursor: grabbing;
+}
+
+.visor-ar-frame {
+  position: absolute;
+  inset: 10px;
+  pointer-events: none;
+  border: 1px solid rgba(73, 255, 226, 0.22);
+  border-radius: 16px;
+}
+
+.visor-reticle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  pointer-events: none;
+  opacity: 0.42;
+}
+
+.visor-reticle-line {
+  width: 26px;
+  height: 1.5px;
+  background: #49ffe2;
+}
+
+.visor-reticle-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  border: 1.5px solid #49ffe2;
+}
+
+.visor-hud-top {
+  position: absolute;
+  top: 1rem;
+  left: 1.2rem;
+  right: 1.2rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  pointer-events: none;
+}
+
+.visor-hud-cluster,
+.visor-layer-bar {
+  pointer-events: auto;
+  background: rgba(11, 17, 27, 0.84);
+  border: 1px solid rgba(73, 255, 226, 0.34);
+  backdrop-filter: blur(6px);
+  border-radius: 12px;
+  padding: 0.45rem 0.75rem;
+}
+
+.visor-layer-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.visor-badge {
+  color: #49ffe2;
+  font-weight: 800;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+}
+
+.visor-sub {
+  font-size: 0.73rem;
+  color: #c7d4e2;
+  margin-top: 0.12rem;
+}
+
+.visor-pill {
+  padding: 0.32rem 0.58rem;
+  border-radius: 999px;
+  border: 1px solid #2e4057;
+  background: rgba(255, 255, 255, 0.05);
+  color: #d0dce8;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.visor-pill.active {
+  border-color: #49ffe2;
+  background: rgba(73, 255, 226, 0.22);
+  color: #ffffff;
+}
+
+.visor-exit-btn {
+  padding: 0.32rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid #ff6b6b;
+  background: rgba(255, 107, 107, 0.18);
+  color: #ffd6d6;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.visor-color-legend {
+  position: absolute;
+  top: 5.1rem;
+  left: 1.2rem;
+  background: rgba(11, 17, 27, 0.86);
+  border: 1px solid rgba(73, 255, 226, 0.32);
+  backdrop-filter: blur(6px);
+  border-radius: 10px;
+  padding: 0.5rem 0.75rem;
+  max-width: 290px;
+  font-size: 0.7rem;
+  color: #d7e2ee;
+  pointer-events: none;
+}
+
+.visor-legend-items {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.visor-legend-items span {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.visor-legend-items i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.visor-warning-triangle {
+  position: absolute;
+  top: 5.1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  background: rgba(24, 16, 6, 0.9);
+  border: 1.5px solid #ffb020;
+  border-radius: 10px;
+  padding: 0.5rem 0.9rem;
+  color: #ffe3a8;
+  font-size: 0.78rem;
+  box-shadow: 0 0 24px rgba(255, 176, 32, 0.35);
+  pointer-events: none;
+}
+
+.visor-warning-triangle strong {
+  display: block;
+  color: #ffb020;
+  letter-spacing: 0.05em;
+}
+
+.visor-minimap-card {
+  position: absolute;
+  top: 5.2rem;
+  right: 1.25rem;
+  width: 215px;
+  background: rgba(11, 17, 27, 0.9);
+  border: 1px solid rgba(73, 255, 226, 0.4);
+  border-radius: 12px;
+  padding: 0.6rem;
+  backdrop-filter: blur(6px);
+}
+
+.visor-box-title {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #49ffe2;
+  margin-bottom: 0.35rem;
+}
+
+.visor-minimap-svg {
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+  border: 1px solid #243449;
+  display: block;
+}
+
+.visor-minimap-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.66rem;
+  color: #b9c7d6;
+  margin-top: 0.35rem;
+}
+
+.visor-hud-bottom {
+  position: absolute;
+  bottom: 1.1rem;
+  left: 1.2rem;
+  right: 1.2rem;
+  background: rgba(11, 17, 27, 0.86);
+  border: 1px solid rgba(73, 255, 226, 0.32);
+  backdrop-filter: blur(6px);
+  border-radius: 14px;
+  padding: 0.6rem 0.9rem;
+}
+
+.visor-bottom-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+@media (max-width: 720px) {
+  .visor-bottom-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.visor-stat {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid #243449;
+  border-radius: 8px;
+  padding: 0.35rem 0.55rem;
+}
+
+.visor-stat.warn {
+  border-color: #ffb020;
+  background: rgba(255, 176, 32, 0.16);
+}
+
+.visor-stat.danger {
+  border-color: #ff5c5c;
+  background: rgba(255, 92, 92, 0.18);
+}
+
+.visor-stat span {
+  display: block;
+  font-size: 0.62rem;
+  color: #93a4b5;
+}
+
+.visor-stat strong {
+  font-size: 0.82rem;
+  color: #ffffff;
+}
+
+.visor-walk-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.visor-step-btn {
+  padding: 0.42rem 0.75rem;
+  border-radius: 7px;
+  border: 1px solid #30455e;
+  background: rgba(255, 255, 255, 0.06);
+  color: #e6edf3;
+  font-weight: 600;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.visor-step-btn.primary {
+  border-color: #49ffe2;
+  background: rgba(73, 255, 226, 0.22);
+  color: #ffffff;
+}
+
+.visor-step-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.visor-caveat-strip {
+  margin-top: 0.35rem;
+  font-size: 0.66rem;
+  color: #93a4b5;
+}
