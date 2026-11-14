@@ -20,12 +20,20 @@ import {
 import { cellLabel, type Cell } from "./lib/geo";
 import { planRoute, type RouteMode } from "./lib/route";
 import {
+  formatDegrees,
+  formatHours,
+  formatKm,
+  formatMeters,
+  formatPercent,
+} from "./lib/format";
+import {
   DEFAULT_SAFETY,
   evaluateSafety,
   loadSafetyConfig,
 } from "./lib/safety";
 import { loadGaleWaypoints } from "./lib/waypoints";
 import type {
+  GaleRouteResult,
   GaleTerrain,
   GaleWaypoint,
   GeologyUnit,
@@ -56,6 +64,34 @@ const ROUTE_MODES: Array<{ id: RouteMode; label: string; hint: string }> = [
     label: "Safest & Easiest",
     hint: "Strongly avoids steep slopes (>15°) and heavy climbs.",
   },
+];
+
+type ToolId =
+  | "route"
+  | "layers"
+  | "minerals"
+  | "waypoints"
+  | "mission"
+  | "visor"
+  | "gallery"
+  | "safety"
+  | "sources";
+
+const TOOLS: Array<{
+  id: ToolId;
+  group: "Tools" | "Reference";
+  label: string;
+  sub: string;
+}> = [
+  { id: "route", group: "Tools", label: "Route Planner", sub: "modes, start & goal, walk" },
+  { id: "layers", group: "Tools", label: "Map Layers", sub: "CTX, hillshade, slope, geology" },
+  { id: "minerals", group: "Tools", label: "Minerals (CRISM)", sub: "21 spectral indices" },
+  { id: "waypoints", group: "Tools", label: "Demo Waypoints", sub: "WP1 - WP5" },
+  { id: "mission", group: "Tools", label: "Mission Card", sub: "printable brief" },
+  { id: "visor", group: "Tools", label: "First-person Visor", sub: "3D helmet view" },
+  { id: "gallery", group: "Tools", label: "Curiosity Gallery", sub: "3 real Mastcam photos" },
+  { id: "safety", group: "Reference", label: "Safety Screening", sub: "estimates + assumptions" },
+  { id: "sources", group: "Reference", label: "Sources & Assumptions", sub: "data provenance" },
 ];
 
 function App() {
@@ -92,7 +128,7 @@ function App() {
   const [walkProgress, setWalkProgress] = useState<number | null>(null);
   const [walkResetKey, setWalkResetKey] = useState(0);
   const [inspectCell, setInspectCell] = useState<Cell | null>(null);
-  const [showDetails, setShowDetails] = useState(false);
+  const [activeTool, setActiveTool] = useState<ToolId>("route");
 
   useEffect(() => {
     let cancelled = false;
@@ -271,6 +307,206 @@ function App() {
       <CaveatBanner />
 
       <main className="app-main">
+        <nav className="feature-rail" aria-label="Tools">
+          {(["Tools", "Reference"] as const).map((group) => (
+            <div key={group} className="rail-group">
+              <span className="rail-label">{group}</span>
+              {TOOLS.filter((tool) => tool.group === group).map((tool) => (
+                <button
+                  key={tool.id}
+                  type="button"
+                  className={`rail-item${activeTool === tool.id ? " active" : ""}`}
+                  aria-pressed={activeTool === tool.id}
+                  onClick={() => setActiveTool(tool.id)}
+                >
+                  <span className="rail-dot" aria-hidden="true" />
+                  <span>
+                    {tool.label}
+                    <small>{tool.sub}</small>
+                  </span>
+                </button>
+              ))}
+            </div>
+          ))}
+        </nav>
+
+        <aside className="tool-panel" aria-label="Active tool">
+          {activeTool === "route" ? (
+            <>
+              <div className="steps-flow" aria-label="Route steps">
+                <span className={`step${start ? " done" : ""}`}>
+                  1 {start ? "\u2713 " : ""}Start
+                </span>
+                <span className={`step${goal ? " done" : ""}`}>
+                  2 {goal ? "\u2713 " : ""}Destination
+                </span>
+                <span className={`step${route?.ok ? " now" : ""}`}>
+                  3 Route ready
+                </span>
+              </div>
+              <section className="panel" aria-labelledby="route-priority-title">
+                <div className="panel-heading">
+                  <h2 id="route-priority-title">Route optimization</h2>
+                  <span className="panel-tag">A* multi-factor</span>
+                </div>
+                <div
+                  className="segmented"
+                  role="group"
+                  aria-label="Route optimization mode"
+                >
+                  {ROUTE_MODES.map((m) => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      className={routeMode === m.id ? "active" : ""}
+                      aria-pressed={routeMode === m.id}
+                      onClick={() => setRouteMode(m.id)}
+                    >
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="panel-note">{activeModeHint}</p>
+              </section>
+              <RoutePanel
+                start={start}
+                goal={goal}
+                pickMode={pickMode}
+                onPickModeChange={setPickMode}
+                walkPlaying={walkPlaying}
+                walkProgress={walkProgress}
+                onToggleWalk={() => setWalkPlaying((playing) => !playing)}
+                onRestartWalk={() => {
+                  setWalkPlaying(false);
+                  setWalkResetKey((key) => key + 1);
+                }}
+                maxSlopeDeg={maxSlopeDeg}
+                onMaxSlopeChange={(value) => {
+                  setWalkPlaying(false);
+                  setMaxSlopeDeg(value);
+                }}
+                route={route}
+                showRoute={showRoute}
+                onShowRouteChange={setShowRoute}
+                onUseDemo={handleUseDemo}
+                onClear={handleClear}
+                hideStats
+              />
+            </>
+          ) : null}
+
+          {activeTool === "layers" || activeTool === "minerals" ? (
+            terrain ? (
+              <TerrainControls
+                sections={
+                  activeTool === "layers"
+                    ? ["surface", "geology", "view", "readout", "patch"]
+                    : ["mineral", "readout"]
+                }
+                terrain={terrain}
+                surface={surface}
+                onSurfaceChange={setSurface}
+                exaggeration={exaggeration}
+                onExaggerationChange={setExaggeration}
+                onResetView={() => setResetViewKey((key) => key + 1)}
+                hoverCell={hoverCell}
+                maxSlopeDeg={maxSlopeDeg}
+                minerals={minerals}
+                mineralBand={mineralBand}
+                onMineralBandChange={setMineralBand}
+                mineralValues={mineralValues}
+                mineralMask={mineralMask}
+                showGeology={showGeology}
+                onShowGeologyChange={setShowGeology}
+                geologyUnit={geologyUnit}
+                geologyInfo={geologyInfo}
+              />
+            ) : (
+              <p className="panel-empty">Loading the terrain…</p>
+            )
+          ) : null}
+
+          {activeTool === "waypoints" ? (
+            <section className="panel" aria-labelledby="waypoints-title">
+              <div className="panel-heading">
+                <h2 id="waypoints-title">Demo waypoints</h2>
+                <span className="panel-tag">Synthetic</span>
+              </div>
+              <p className="panel-note">
+                Click a marker or card. WP1 is a blocked example at 20°; WP2
+                and WP5 are the default demo traverse.
+              </p>
+              {waypoints.length > 0 ? (
+                <div className="waypoint-list">
+                  {waypoints.map((waypoint) => (
+                    <WaypointCard
+                      key={waypoint.id}
+                      waypoint={waypoint}
+                      maxSlopeDeg={maxSlopeDeg}
+                      isStart={
+                        start?.row === waypoint.row &&
+                        start?.col === waypoint.col
+                      }
+                      isGoal={
+                        goal?.row === waypoint.row && goal?.col === waypoint.col
+                      }
+                      isSelected={selectedWaypointId === waypoint.id}
+                      onSelect={() => handleWaypointSelect(waypoint.id)}
+                      onSetStart={() => handleSetStart(waypoint)}
+                      onSetGoal={() => handleSetGoal(waypoint)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <p className="panel-empty">Waypoint GeoJSON is not loaded.</p>
+              )}
+              {start && goal ? (
+                <p className="panel-note">
+                  Selected traverse: {cellLabel(start)} → {cellLabel(goal)}.
+                </p>
+              ) : null}
+            </section>
+          ) : null}
+
+          {activeTool === "mission" ? (
+            <MissionCard
+              terrain={terrain}
+              start={start}
+              goal={goal}
+              waypoints={waypoints}
+              route={route}
+              safety={safety}
+              config={effectiveSafetyConfig}
+              surface={surface}
+              geologyInfo={geologyInfo}
+            />
+          ) : null}
+
+          {activeTool === "visor" ? (
+            <HelmetHud
+              terrain={terrain}
+              route={route}
+              safety={safety}
+              config={effectiveSafetyConfig}
+              waypoints={waypoints}
+              start={start}
+              goal={goal}
+            />
+          ) : null}
+
+          {activeTool === "gallery" ? <PovGallery /> : null}
+
+          {activeTool === "safety" ? (
+            <SafetyPanel
+              safety={safety}
+              route={route}
+              config={effectiveSafetyConfig}
+            />
+          ) : null}
+
+          {activeTool === "sources" ? <SourcesPanel /> : null}
+        </aside>
+
         <section className="map-stage" aria-label="Mars map">
           {terrain ? (
             <>
@@ -312,25 +548,6 @@ function App() {
                   onClose={() => setInspectCell(null)}
                 />
               ) : null}
-              <TerrainControls
-                terrain={terrain}
-                surface={surface}
-                onSurfaceChange={setSurface}
-                exaggeration={exaggeration}
-                onExaggerationChange={setExaggeration}
-                onResetView={() => setResetViewKey((key) => key + 1)}
-                hoverCell={hoverCell}
-                maxSlopeDeg={maxSlopeDeg}
-                minerals={minerals}
-                mineralBand={mineralBand}
-                onMineralBandChange={setMineralBand}
-                mineralValues={mineralValues}
-                mineralMask={mineralMask}
-                showGeology={showGeology}
-                onShowGeologyChange={setShowGeology}
-                geologyUnit={geologyUnit}
-                geologyInfo={geologyInfo}
-              />
               <Legend
                 surface={surface}
                 maxSlopeDeg={maxSlopeDeg}
@@ -356,135 +573,9 @@ function App() {
           )}
         </section>
 
-        <aside className="side-panel" aria-label="Route and safety panels">
-          <section className="panel" aria-labelledby="route-priority-title">
-            <div className="panel-heading">
-              <h2 id="route-priority-title">Route optimization</h2>
-              <span className="panel-tag">A* multi-factor</span>
-            </div>
-            <div className="segmented" role="group" aria-label="Route optimization mode">
-              {ROUTE_MODES.map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  className={routeMode === m.id ? "active" : ""}
-                  aria-pressed={routeMode === m.id}
-                  onClick={() => setRouteMode(m.id)}
-                >
-                  {m.label}
-                </button>
-              ))}
-            </div>
-            <p className="panel-note">{activeModeHint}</p>
-          </section>
-
-          <RoutePanel
-            start={start}
-            goal={goal}
-            pickMode={pickMode}
-            onPickModeChange={setPickMode}
-            walkPlaying={walkPlaying}
-            walkProgress={walkProgress}
-            onToggleWalk={() => setWalkPlaying((playing) => !playing)}
-            onRestartWalk={() => {
-              setWalkPlaying(false);
-              setWalkResetKey((key) => key + 1);
-            }}
-            maxSlopeDeg={maxSlopeDeg}
-            onMaxSlopeChange={(value) => {
-              setWalkPlaying(false);
-              setMaxSlopeDeg(value);
-            }}
-            route={route}
-            showRoute={showRoute}
-            onShowRouteChange={setShowRoute}
-            onUseDemo={handleUseDemo}
-            onClear={handleClear}
-          />
-
-          <button
-            type="button"
-            className="ghost-button details-toggle"
-            onClick={() => setShowDetails((show) => !show)}
-          >
-            {showDetails ? "Hide advanced details" : "Show advanced details"}
-          </button>
-
-          {showDetails ? (
-            <SafetyPanel
-              safety={safety}
-              route={route}
-              config={effectiveSafetyConfig}
-            />
-          ) : null}
-
-          <MissionCard
-            terrain={terrain}
-            start={start}
-            goal={goal}
-            waypoints={waypoints}
-            route={route}
-            safety={safety}
-            config={effectiveSafetyConfig}
-            surface={surface}
-            geologyInfo={geologyInfo}
-          />
-    
-           <HelmetHud
-         terrain={terrain}
-         route={route}
-         safety={safety}
-         config={effectiveSafetyConfig}
-         waypoints={waypoints}
-         start={start}
-         goal={goal}
-           />
-           
-          <section className="panel" aria-labelledby="waypoints-title">
-            <div className="panel-heading">
-              <h2 id="waypoints-title">Demo waypoints</h2>
-              <span className="panel-tag">Synthetic</span>
-            </div>
-            <p className="panel-note">
-              Click a marker or card. WP1 is a blocked example at 20°; WP2 and
-              WP5 are the default demo traverse.
-            </p>
-            {waypoints.length > 0 ? (
-              <div className="waypoint-list">
-                {waypoints.map((waypoint) => (
-                  <WaypointCard
-                    key={waypoint.id}
-                    waypoint={waypoint}
-                    maxSlopeDeg={maxSlopeDeg}
-                    isStart={
-                      start?.row === waypoint.row && start?.col === waypoint.col
-                    }
-                    isGoal={
-                      goal?.row === waypoint.row && goal?.col === waypoint.col
-                    }
-                    isSelected={selectedWaypointId === waypoint.id}
-                    onSelect={() => handleWaypointSelect(waypoint.id)}
-                    onSetStart={() => handleSetStart(waypoint)}
-                    onSetGoal={() => handleSetGoal(waypoint)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <p className="panel-empty">Waypoint GeoJSON is not loaded.</p>
-            )}
-            {start && goal ? (
-              <p className="panel-note">
-                Selected traverse: {cellLabel(start)} → {cellLabel(goal)}.
-              </p>
-            ) : null}
-          </section>
-
-          <PovGallery />
-
-          {showDetails ? <SourcesPanel /> : null}
-
-        </aside>
       </main>
+
+      <RouteStatsBar route={route} />
 
       <footer className="app-footer">
         <p>
@@ -498,6 +589,38 @@ function App() {
   );
 }
 
+
+function RouteStatsBar({ route }: { route: GaleRouteResult | null }) {
+  if (!route || !route.ok) {
+    return (
+      <div className="stats-bar" aria-label="Route statistics">
+        <p className="stats-bar-empty">
+          Plan a route to see its key numbers here.
+        </p>
+      </div>
+    );
+  }
+  const items: Array<{ value: string; label: string }> = [
+    { value: formatKm(route.distanceKm), label: "Distance" },
+    { value: formatHours(route.durationH), label: "Walk time (est.)" },
+    { value: formatDegrees(route.maxSlope), label: "Max slope" },
+    { value: formatDegrees(route.avgSlope), label: "Mean slope" },
+    { value: formatMeters(route.elevationGainM), label: "Climb" },
+    { value: formatMeters(route.elevationLossM), label: "Descent" },
+    { value: formatPercent(route.steepFraction), label: "Above 15\u00b0" },
+    { value: String(route.path.length), label: "Path cells" },
+  ];
+  return (
+    <dl className="stats-bar" aria-label="Route statistics">
+      {items.map((item) => (
+        <div key={item.label}>
+          <dd>{item.value}</dd>
+          <dt>{item.label}</dt>
+        </div>
+      ))}
+    </dl>
+  );
+}
 
 interface InspectCardProps {
   cell: Cell;
