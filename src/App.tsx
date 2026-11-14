@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CaveatBanner } from "./components/CaveatBanner";
 import { Legend } from "./components/Legend";
 import { MissionCard } from "./components/MissionCard";
+import { HelmetHud } from "./components/HelmetHud";
 import { PovGallery } from "./components/PovGallery";
 import { RoutePanel } from "./components/RoutePanel";
 import { SafetyPanel } from "./components/SafetyPanel";
@@ -11,7 +12,7 @@ import { TerrainView } from "./components/TerrainView";
 import { WaypointCard } from "./components/WaypointCard";
 import { loadGaleTerrain } from "./lib/gale";
 import { cellLabel, type Cell } from "./lib/geo";
-import { planRoute } from "./lib/route";
+import { planRoute, type RouteMode } from "./lib/route";
 import {
   DEFAULT_SAFETY,
   evaluateSafety,
@@ -26,6 +27,24 @@ import type {
   TerrainSurface,
 } from "./types";
 
+const ROUTE_MODES: Array<{ id: RouteMode; label: string; hint: string }> = [
+  {
+    id: "balanced",
+    label: "Shortest + Easiest + Safest",
+    hint: "Balances short distance, minimal uphill climb, and gentle slopes.",
+  },
+  {
+    id: "shortest",
+    label: "Shortest",
+    hint: "Minimizes distance while staying within the max slope limit.",
+  },
+  {
+    id: "safest",
+    label: "Safest & Easiest",
+    hint: "Strongly avoids steep slopes (>15°) and heavy climbs.",
+  },
+];
+
 function App() {
   const [terrain, setTerrain] = useState<GaleTerrain | null>(null);
   const [waypoints, setWaypoints] = useState<GaleWaypoint[]>([]);
@@ -36,6 +55,7 @@ function App() {
   const [surface, setSurface] = useState<TerrainSurface>("ctx");
   const [exaggeration, setExaggeration] = useState(1.5);
   const [maxSlopeDeg, setMaxSlopeDeg] = useState(DEFAULT_SAFETY.maxSlopeDeg);
+  const [routeMode, setRouteMode] = useState<RouteMode>("balanced");
   const [start, setStart] = useState<Cell | null>(null);
   const [goal, setGoal] = useState<Cell | null>(null);
   const [pickMode, setPickMode] = useState<"start" | "goal">("start");
@@ -100,8 +120,9 @@ function App() {
     return planRoute(terrain, start, goal, {
       maxSlopeDeg,
       safetyConfig: effectiveSafetyConfig,
+      mode: routeMode,
     });
-  }, [terrain, start, goal, maxSlopeDeg, effectiveSafetyConfig]);
+  }, [terrain, start, goal, maxSlopeDeg, effectiveSafetyConfig, routeMode]);
 
   const safety = useMemo(
     () => (route ? evaluateSafety(route, effectiveSafetyConfig) : null),
@@ -147,6 +168,7 @@ function App() {
       setGoal({ row: demoGoal.row, col: demoGoal.col });
       setSelectedWaypointId(demoStart.id);
       setMaxSlopeDeg(20);
+      setRouteMode("balanced");
     }
   };
 
@@ -156,6 +178,9 @@ function App() {
     setSelectedWaypointId(null);
     setPickMode("start");
   };
+
+  const activeModeHint =
+    ROUTE_MODES.find((m) => m.id === routeMode)?.hint ?? "";
 
   return (
     <div className="app">
@@ -227,6 +252,27 @@ function App() {
         </section>
 
         <aside className="side-panel" aria-label="Route and safety panels">
+          <section className="panel" aria-labelledby="route-priority-title">
+            <div className="panel-heading">
+              <h2 id="route-priority-title">Route optimization</h2>
+              <span className="panel-tag">A* multi-factor</span>
+            </div>
+            <div className="segmented" role="group" aria-label="Route optimization mode">
+              {ROUTE_MODES.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  className={routeMode === m.id ? "active" : ""}
+                  aria-pressed={routeMode === m.id}
+                  onClick={() => setRouteMode(m.id)}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+            <p className="panel-note">{activeModeHint}</p>
+          </section>
+
           <RoutePanel
             start={start}
             goal={goal}
@@ -254,7 +300,17 @@ function App() {
             surface={surface}
             geologyInfo={geologyInfo}
           />
-
+    
+           <HelmetHud
+         terrain={terrain}
+         route={route}
+         safety={safety}
+         config={effectiveSafetyConfig}
+         waypoints={waypoints}
+         start={start}
+         goal={goal}
+           />
+           
           <section className="panel" aria-labelledby="waypoints-title">
             <div className="panel-heading">
               <h2 id="waypoints-title">Demo waypoints</h2>

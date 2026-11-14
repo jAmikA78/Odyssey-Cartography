@@ -20,7 +20,17 @@ const NEIGHBORS: ReadonlyArray<readonly [number, number]> = [
 ];
 
 const STEEP_SLOPE_DEG = 15;
-const DEFAULT_SLOPE_PENALTY = 4;
+
+export type RouteMode = "balanced" | "shortest" | "safest";
+
+const MODE_WEIGHTS: Record<
+  RouteMode,
+  { slopePenalty: number; climbPenalty: number; cautionPenalty: number }
+> = {
+  balanced: { slopePenalty: 4, climbPenalty: 3.5, cautionPenalty: 0.6 },
+  shortest: { slopePenalty: 0.6, climbPenalty: 0.5, cautionPenalty: 0 },
+  safest: { slopePenalty: 10, climbPenalty: 6.5, cautionPenalty: 1.5 },
+};
 
 class MinHeap {
   private indices: number[] = [];
@@ -114,6 +124,7 @@ export interface RouteOptions {
   maxSlopeDeg?: number;
   slopePenalty?: number;
   safetyConfig?: SafetyConfig;
+  mode?: RouteMode;
 }
 
 export function planRoute(
@@ -124,7 +135,9 @@ export function planRoute(
 ): GaleRouteResult {
   const config = options.safetyConfig ?? DEFAULT_SAFETY;
   const maxSlopeDeg = options.maxSlopeDeg ?? config.maxSlopeDeg;
-  const slopePenalty = options.slopePenalty ?? DEFAULT_SLOPE_PENALTY;
+  const mode = options.mode ?? "balanced";
+  const weights = MODE_WEIGHTS[mode];
+  const slopePenalty = options.slopePenalty ?? weights.slopePenalty;
   const width = terrain.meta.width;
   const height = terrain.meta.height;
 
@@ -201,8 +214,22 @@ export function planRoute(
         { row: nextRow, col: nextCol },
         terrain.patch,
       );
-      const ratio = terrain.slope[nextIndex] / maxSlopeDeg;
-      const stepCost = stepMeters * (1 + slopePenalty * ratio * ratio);
+      const slopeDeg = terrain.slope[nextIndex];
+      const ratio = slopeDeg / maxSlopeDeg;
+      const climbM = Math.max(
+        0,
+        terrain.elevation[nextIndex] - terrain.elevation[current],
+      );
+      const climbRatio = climbM / Math.max(1, stepMeters);
+      const cautionExtra =
+        slopeDeg > STEEP_SLOPE_DEG ? weights.cautionPenalty : 0;
+
+      const stepCost =
+        stepMeters *
+        (1 +
+          slopePenalty * ratio * ratio +
+          weights.climbPenalty * climbRatio +
+          cautionExtra);
       const tentative = gScore[current] + stepCost;
 
       if (tentative < gScore[nextIndex]) {
