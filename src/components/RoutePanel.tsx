@@ -11,8 +11,12 @@ import {
 interface RoutePanelProps {
   start: Cell | null;
   goal: Cell | null;
-  pickMode: "start" | "goal";
-  onPickModeChange: (mode: "start" | "goal") => void;
+  pickMode: "inspect" | "start" | "goal";
+  onPickModeChange: (mode: "inspect" | "start" | "goal") => void;
+  walkPlaying: boolean;
+  walkProgress: number | null;
+  onToggleWalk: () => void;
+  onRestartWalk: () => void;
   maxSlopeDeg: number;
   onMaxSlopeChange: (value: number) => void;
   route: GaleRouteResult | null;
@@ -34,6 +38,10 @@ export function RoutePanel({
   onShowRouteChange,
   onUseDemo,
   onClear,
+  walkPlaying,
+  walkProgress,
+  onToggleWalk,
+  onRestartWalk,
 }: RoutePanelProps) {
   return (
     <section className="panel" aria-labelledby="route-panel-title">
@@ -47,7 +55,9 @@ export function RoutePanel({
           type="button"
           className={pickMode === "start" ? "active" : ""}
           aria-pressed={pickMode === "start"}
-          onClick={() => onPickModeChange("start")}
+          onClick={() =>
+            onPickModeChange(pickMode === "start" ? "inspect" : "start")
+          }
         >
           Set start
         </button>
@@ -55,11 +65,20 @@ export function RoutePanel({
           type="button"
           className={pickMode === "goal" ? "active" : ""}
           aria-pressed={pickMode === "goal"}
-          onClick={() => onPickModeChange("goal")}
+          onClick={() =>
+            onPickModeChange(pickMode === "goal" ? "inspect" : "goal")
+          }
         >
           Set destination
         </button>
       </div>
+      <p className="mode-hint">
+        {pickMode === "start"
+          ? "Start placement armed: click the terrain to place the start."
+          : pickMode === "goal"
+            ? "Destination placement armed: click the terrain to place the destination."
+            : "Clicking the terrain pins an info card and never moves the route."}
+      </p>
 
       <dl className="cell-pair">
         <div>
@@ -95,6 +114,33 @@ export function RoutePanel({
         <>
           <div className="status-row status-ok">
             <span className="status-dot" /> Route found
+          </div>
+          <div className="walk-block">
+            <div className="walk-row">
+              <button
+                type="button"
+                className="walk-button"
+                onClick={onToggleWalk}
+              >
+                {walkPlaying ? "Pause walk" : "Walk the route"}
+              </button>
+              <button
+                type="button"
+                className="ghost-button"
+                onClick={onRestartWalk}
+              >
+                Restart
+              </button>
+              {walkProgress !== null ? (
+                <span className="walk-progress">
+                  {Math.round(walkProgress * 100)}%
+                </span>
+              ) : null}
+            </div>
+            <p className="walk-note">
+              Compressed playback · estimated real walk {formatHours(route.durationH)}
+              {" "}· traveled path turns gold
+            </p>
           </div>
           <dl className="stat-grid">
             <div>
