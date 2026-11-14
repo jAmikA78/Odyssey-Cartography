@@ -590,9 +590,9 @@ export function TerrainView(props: TerrainViewProps) {
       const portrait = aspect < 1;
       const scale = portrait ? 1.45 : 1;
       camera.position.set(
-        widthMeters * (portrait ? 0.55 : 0.78) * scale,
-        widthMeters * (portrait ? 1.05 : 0.9) * scale,
-        depthMeters * (portrait ? 1.0 : 1.1) * scale,
+        widthMeters * (portrait ? 0.55 : 0.58) * scale,
+        widthMeters * (portrait ? 1.05 : 0.62) * scale,
+        depthMeters * (portrait ? 1.0 : 0.78) * scale,
       );
       controls.target.set(0, portrait ? 0 : 200, 0);
       controls.update();
@@ -1091,4 +1091,4 @@ export function TerrainView(props: TerrainViewProps) {
       ) : null}
     </div>
   );
-        }
+}
