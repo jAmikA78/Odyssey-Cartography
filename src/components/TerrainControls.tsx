@@ -7,7 +7,16 @@ import type {
 } from "../types";
 import { cellLabel, type Cell } from "../lib/geo";
 
+export type TerrainControlSection =
+  | "surface"
+  | "mineral"
+  | "geology"
+  | "view"
+  | "readout"
+  | "patch";
+
 interface TerrainControlsProps {
+  sections?: TerrainControlSection[];
   terrain: GaleTerrain;
   surface: TerrainSurface;
   onSurfaceChange: (surface: TerrainSurface) => void;
@@ -59,7 +68,10 @@ export function TerrainControls({
   onShowGeologyChange,
   geologyUnit,
   geologyInfo,
+  sections,
 }: TerrainControlsProps) {
+  const show = (section: TerrainControlSection): boolean =>
+    !sections || sections.includes(section);
   const index = hoverCell
     ? hoverCell.row * terrain.meta.width + hoverCell.col
     : -1;
@@ -77,8 +89,8 @@ export function TerrainControls({
       : false;
 
   return (
-    <div className="terrain-controls">
-      <div className="control-block">
+    <div className={sections ? "terrain-controls inline" : "terrain-controls"}>
+      <div className={`control-block${show("surface") ? "" : " control-hidden"}`}>
         <span className="control-label">Surface</span>
         <div className="segmented" role="group" aria-label="Terrain surface">
           {SURFACES.map((item) => (
@@ -102,7 +114,7 @@ export function TerrainControls({
         </p>
       </div>
 
-      <div className="control-block">
+      <div className={`control-block${show("mineral") ? "" : " control-hidden"}`}>
         <label className="control-label" htmlFor="mineral">
           Mineral layer (CRISM spectral indices)
         </label>
@@ -139,7 +151,7 @@ export function TerrainControls({
         )}
       </div>
 
-      <div className="control-block">
+      <div className={`control-block${show("geology") ? "" : " control-hidden"}`}>
         <label className="control-label" htmlFor="geology">
           <input
             id="geology"
@@ -159,7 +171,7 @@ export function TerrainControls({
 
       </div>
 
-      <div className="control-block">
+      <div className={`control-block${show("view") ? "" : " control-hidden"}`}>
         <label className="control-label" htmlFor="exaggeration">
           Vertical exaggeration · {exaggeration.toFixed(1)}×
         </label>
@@ -177,7 +189,7 @@ export function TerrainControls({
         </button>
       </div>
 
-      <div className="control-block readout">
+      <div className={`control-block readout${show("readout") ? "" : " control-hidden"}`}>
         {hoverCell && hoverElevation !== null && hoverSlope !== null ? (
           <>
             <span className="control-label">Cursor</span>
@@ -201,7 +213,7 @@ export function TerrainControls({
         )}
       </div>
 
-      <div className="control-block patch-meta">
+      <div className={`control-block patch-meta${show("patch") ? "" : " control-hidden"}`}>
         <span className="control-label">Patch</span>
         <p>
           {terrain.meta.width} × {terrain.meta.height} cells ·{" "}
