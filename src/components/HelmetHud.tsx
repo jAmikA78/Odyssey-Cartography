@@ -470,7 +470,10 @@ export function HelmetHud({
   const [crewMode, setCrewMode] = useState<"pair-rover" | "solo">("pair-rover");
   const [yawDeg, setYawDeg] = useState(0);
   const [pitchDeg, setPitchDeg] = useState(-4);
+  const [scanPeak, setScanPeak] = useState<{ slope: number; distanceM: number } | null>(null);
   const travelRef = useRef(0);
+  const scanRequestRef = useRef(0);
+  const scanTimeoutRef = useRef<number | null>(null);
   const playingRef = useRef(false);
   const crewModeRef = useRef(crewMode);
   playingRef.current = playing;
@@ -505,6 +508,10 @@ export function HelmetHud({
     setStepIdx(Math.floor(next));
     setPlaying(false);
   };
+
+  useEffect(() => () => {
+    if (scanTimeoutRef.current !== null) window.clearTimeout(scanTimeoutRef.current);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -785,6 +792,41 @@ export function HelmetHud({
     routePulse.rotation.x = -Math.PI / 2;
     scene.add(routePulse);
 
+    const scanSegments = 64;
+    const scanPositions = new Float32Array(scanSegments * 3);
+    const scanGeometry = new THREE.BufferGeometry();
+    scanGeometry.setAttribute("position", new THREE.BufferAttribute(scanPositions, 3));
+    const scanRing = new THREE.LineLoop(
+      scanGeometry,
+      new THREE.LineBasicMaterial({
+        color: 0x9ffff0,
+        transparent: true,
+        opacity: 0,
+        depthWrite: false,
+      }),
+    );
+    scanRing.visible = false;
+    scanRing.renderOrder = 4;
+    scene.add(scanRing);
+
+    const scanMarkers = Array.from({ length: 5 }, () => {
+      const marker = new THREE.Mesh(
+        new THREE.RingGeometry(1.5, 1.82, 32),
+        new THREE.MeshBasicMaterial({
+          color: 0x49ffe2,
+          transparent: true,
+          opacity: 0,
+          depthWrite: false,
+          side: THREE.DoubleSide,
+        }),
+      );
+      marker.rotation.x = -Math.PI / 2;
+      marker.visible = false;
+      marker.renderOrder = 4;
+      scene.add(marker);
+      return marker;
+    });
+
     const chevronGroup = new THREE.Group();
     const chevronShape = new THREE.ConeGeometry(0.42, 1.1, 3);
     chevronShape.rotateX(Math.PI / 2);
@@ -865,6 +907,9 @@ export function HelmetHud({
     camera.position.copy(camera.userData.walkTarget);
     camera.rotation.order = "YXZ";
     camera.rotation.set(-0.07, initYaw, 0);
+    let handledScan = scanRequestRef.current;
+    let scanStartedAt = -10000;
+    const scanOrigin = new THREE.Vector3();
     let pathYaw = initYaw;
     let pathPitch = -0.07;
     let lookYawOffset = 0;
@@ -972,6 +1017,47 @@ export function HelmetHud({
         setDisplayProgress((previous) => Math.abs(previous - travelRef.current) > 0.003 ? travelRef.current : previous);
       }
       const crew = sampleRoute(travelRef.current);
+      if (scanRequestRef.current !== handledScan) {
+        handledScan = scanRequestRef.current;
+        scanStartedAt = time;
+        scanOrigin.copy(crew);
+        const index = Math.floor(travelRef.current);
+        for (let i = 0; i < scanMarkers.length; i++) {
+          const pathIndex = index + i + 1;
+          const marker = scanMarkers[i];
+          marker.visible = pathIndex <= maxStep;
+          if (!marker.visible) continue;
+          const cell = route.path[pathIndex];
+          const world = cellToWorld(cell.y, cell.x);
+          marker.position.set(world.x, world.y + 0.42, world.z);
+          marker.userData.distance = Math.hypot(world.x - crew.x, world.z - crew.z);
+          const slope = terrain.slope[cell.y * width + cell.x] ?? 0;
+          marker.material.color.setHex(slope > config.maxSlopeDeg ? 0xff6666 : slope > 15 ? 0xffb020 : 0x49ffe2);
+        }
+      }
+      const scanAge = (time - scanStartedAt) / 1000;
+      const scanRadius = Math.min(100, Math.max(0, scanAge / 2.2) * 100);
+      scanRing.visible = !reducedMotion.matches && scanAge >= 0 && scanAge < 2.2;
+      if (scanRing.visible) {
+        const vertices = scanGeometry.attributes.position;
+        for (let i = 0; i < scanSegments; i++) {
+          const angle = i / scanSegments * Math.PI * 2;
+          const x = scanOrigin.x + Math.cos(angle) * scanRadius;
+          const z = scanOrigin.z + Math.sin(angle) * scanRadius;
+          vertices.setXYZ(i, x, sampleWorldY(x, z) + 0.36, z);
+        }
+        vertices.needsUpdate = true;
+        scanRing.material.opacity = 0.82 * (1 - scanAge / 2.2);
+      }
+      for (const marker of scanMarkers) {
+        if (!marker.visible) continue;
+        marker.visible = scanAge < 4.5;
+        if (marker.visible) {
+          const reached = reducedMotion.matches || scanRadius >= marker.userData.distance;
+          marker.material.opacity = reached ? 0.8 * Math.min(1, (4.5 - scanAge) / 1.5) : 0;
+          marker.scale.setScalar(reducedMotion.matches ? 1 : 1 + Math.sin(scanAge * 7) * 0.08);
+        }
+      }
       const behind = sampleRoute(Math.max(0, travelRef.current - 0.2));
       const ahead = sampleRoute(Math.min(maxStep, travelRef.current + 1.1));
       const guide = sampleRoute(Math.min(maxStep, travelRef.current + 0.8));
@@ -993,13 +1079,31 @@ export function HelmetHud({
         const scoutZ = crew.z + direction.z * scoutForwardOffset - direction.x * scoutSideOffset;
         const groundY = sampleWorldY(scoutX, scoutZ);
         const roverYaw = Math.atan2(direction.x, direction.z);
-        roverGroup.position.set(scoutX, groundY - 0.08, scoutZ);
-        roverGroup.rotation.y = roverYaw;
+        const cosine = Math.cos(roverYaw);
+        const sine = Math.sin(roverYaw);
+        const wheelX = 1.15 * 1.35;
+        const wheelZ = 1.05 * 1.35;
+        const wheelGround = (x: number, z: number) => sampleWorldY(
+          scoutX + x * cosine + z * sine,
+          scoutZ - x * sine + z * cosine,
+        );
+        const frontLeft = wheelGround(-wheelX, wheelZ);
+        const frontRight = wheelGround(wheelX, wheelZ);
+        const rearLeft = wheelGround(-wheelX, -wheelZ);
+        const rearRight = wheelGround(wheelX, -wheelZ);
+        const wheelGroundMean = (frontLeft + frontRight + rearLeft + rearRight) / 4;
+        const pitch = -Math.atan2(frontLeft + frontRight - rearLeft - rearRight, 4 * wheelZ);
+        const roll = Math.atan2(frontRight + rearRight - frontLeft - rearLeft, 4 * wheelX);
+        roverGroup.position.set(scoutX, wheelGroundMean - 0.06, scoutZ);
+        roverGroup.rotation.order = "YXZ";
+        roverGroup.rotation.set(
+          Math.max(-0.25, Math.min(0.25, pitch)),
+          roverYaw,
+          Math.max(-0.25, Math.min(0.25, roll)),
+        );
         groundShadow.position.set(scoutX, groundY, scoutZ);
         groundShadow.rotation.y = roverYaw;
         const shadowVertices = groundShadowGeometry.attributes.position;
-        const cosine = Math.cos(roverYaw);
-        const sine = Math.sin(roverYaw);
         for (let i = 0; i < shadowVertices.count; i++) {
           const localX = shadowVertices.getX(i);
           const localZ = shadowVertices.getZ(i);
@@ -1167,6 +1271,8 @@ export function HelmetHud({
 
   const handleOpen = () => {
     travelRef.current = 0;
+    scanRequestRef.current = 0;
+    setScanPeak(null);
     setStepIdx(0);
     setDisplayProgress(0);
     setPlaying(false);
@@ -1205,6 +1311,7 @@ export function HelmetHud({
         >
           <div ref={viewportRef} className="visor-3d-canvas" />
           <div className="visor-atmosphere" aria-hidden="true" />
+          {scanPeak && <div key={scanRequestRef.current} className="visor-scan-flash" aria-hidden="true" />}
 
           {/* Clean AR Corner Brackets (unobstructed full-brightness viewport) */}
           <div className="visor-ar-frame" aria-hidden="true" />
@@ -1260,6 +1367,19 @@ export function HelmetHud({
               </button>
               <button
                 type="button"
+                className="visor-pill visor-scan-button"
+                disabled={displayProgress >= maxStep}
+                onClick={() => {
+                  scanRequestRef.current += 1;
+                  setScanPeak({ slope: telemetry.aheadMaxSlope, distanceM: telemetry.aheadDistM });
+                  if (scanTimeoutRef.current !== null) window.clearTimeout(scanTimeoutRef.current);
+                  scanTimeoutRef.current = window.setTimeout(() => setScanPeak(null), 4500);
+                }}
+              >
+                ◎ Scan ahead
+              </button>
+              <button
+                type="button"
                 className="visor-exit-btn"
                 onClick={() => {
                   setPlaying(false);
@@ -1270,6 +1390,22 @@ export function HelmetHud({
               </button>
             </div>
           </div>
+
+          {scanPeak && (
+            <div className="visor-scan-report" role="status">
+              <strong>ROUTE SURVEY · NEXT FIVE CELLS</strong>
+              <span>Peak slope {scanPeak.slope.toFixed(1)}° · ~{scanPeak.distanceM} m ahead</span>
+              <small>{scanPeak.slope > 15 ? "Steeper ground ahead. Check the slope layer." : "No steep sample found on this route section."} DEM screening only · visual scan, not a live sensor.</small>
+            </div>
+          )}
+
+          {displayProgress >= maxStep && (
+            <div className="visor-arrival" role="status">
+              <span>TRAVERSE COMPLETE</span>
+              <strong>Destination reached</strong>
+              <small>Review the return margin before planning the next leg.</small>
+            </div>
+          )}
 
           {/* Dynamic In-Visor Layer Color Legend */}
           <div className="visor-color-legend">

@@ -2,7 +2,7 @@
 
 **NASA Space Apps Challenge Cairo 2026 — "Interplanetary Survival Guide: Martian Map"**
 
-> **Status:** The local checkout includes the integrated terrain, minerals, geology, Curiosity gallery, printable mission card, and helmet view. The expedition-console redesign adds animated beacons, route playback, elevation scrubbing, and camera presets. These changes are local and uncommitted; the public deployment has not been verified in this pass.
+> **Status:** The feature branch includes the integrated terrain, minerals, geology, Curiosity gallery, printable mission card, and helmet view. The expedition console adds animated beacons, route playback, elevation scrubbing, camera presets, and a data-backed visor terrain scan. The public deployment has not been verified in this pass.
 
 ## What It Is
 

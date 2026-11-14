@@ -1,6 +1,6 @@
 # Expedition console refresh
 
-Implemented locally on 2026-11-14 at the user's request. Based on the clean integrated `main` checkout at `c27e8d2`. No commit, push, merge, or deployment was performed. A's integration review is still pending.
+Implemented on feature branch `feat/expedition-console` on 2026-11-14 at the user's request. Based on integrated `main` at `c27e8d2`. The first polish pass was committed and pushed; no merge or deployment was performed. A's integration review is still pending.
 
 ## Experience
 
@@ -16,10 +16,12 @@ Implemented locally on 2026-11-14 at the user's request. Based on the clean inte
 - The helmet view now moves continuously along the computed route instead of teleporting between 20 m cells. Auto-Walk uses a 3 m/s visual pace; pause, manual stepping, and scrubbing remain available. The camera follows with smoothed heading and height.
 - The visor progress control now tracks movement continuously. Scrubbing or stepping moves the camera to that location and turns it toward the route; large seeks face forward immediately. Free look remains available while stationary, then eases back toward the route when travel resumes.
 - A restrained atmospheric pass adds drifting dust, a soft horizon haze and edge vignette, a small route guide pulse, and subtle walking motion. Reduced-motion mode freezes ambient movement while leaving explicit route controls usable. These are visual effects, not weather or sensor readings.
+- The optional visor scan sends a terrain-following visual ring across the scene and briefly marks the next five route cells using measured DEM slope categories. Its report names the peak sampled slope and distance. It is a visualization of local map data, not a live instrument or obstacle detector. Reduced-motion mode skips the expanding ring and shows static markers.
+- Reaching the end of the synthetic route displays a destination moment and prompts return-margin review. The 390 px visor layout keeps its layer controls, color key, and rover in view.
 - The visor now uses a separate local 932 × 932 CTX crop (~5.1 m display spacing) from Caltech Murray Lab's published mosaic. The planning basemap and CRISM registration still use their original Mars Trek CTX texture. The visor texture adds optical detail only; the terrain shape and route remain based on the 20 m DEM.
 - The desktop visor draws a denser, smoothly interpolated display mesh from the same 20 m DEM samples; narrow screens keep the original mesh density. Extra rocks near the route are illustrative scale cues, not mapped obstacles.
 - The illustrative scout rover stays roughly 8 m ahead and to the side of the viewer. Its smaller, matte six-wheel body and solar panels read more clearly. The visor names it and can hide it with the Scout rover switch. The printable mission card, Curiosity gallery, CRISM layers, geology, source notes, and safety panels remain available.
-- The scout rover now has beveled housings, detailed wheel rims and hubs, suspension rods, solar-cell grids, a two-lens mast camera, matte metal surfaces, and a terrain-following contact shadow. It remains an illustrative model, not a mission rover asset.
+- The scout rover now has beveled housings, detailed wheel rims and hubs, suspension rods, solar-cell grids, a two-lens mast camera, matte metal surfaces, wheel-ground slope fitting, and a terrain-following contact shadow. It remains an illustrative model, not a mission rover asset.
 - A comparison card computes the three existing route modes under the same slope limit and shows distance, scenario walk time, climb, and maximum slope. Selection activates that route on the terrain. The distance-priority option retains penalties and is not presented as a guaranteed shortest path.
 
 ## Inspection corrections
@@ -36,7 +38,7 @@ Implemented locally on 2026-11-14 at the user's request. Based on the clean inte
 - `npm test`: six data-backed regression tests pass. They cover all routing modes, blocked cells and diagonal corner cuts, profile/route distance agreement, missing and same-cell paths, configured walk-back reserves, and default safety outputs.
 - `npm run build`: passes.
 - `npm run build:offline`: passes. The existing classic-script Vite warnings for vendored Three.js and OrbitControls are expected.
-- Browser checks: desktop and 390 px viewport; no horizontal overflow at mobile width; waypoint selection, WP1 blocked start, default route restoration, surface/mineral switching, camera controls, and keyboard profile scrubbing. The rebuilt visor was inspected in the local desktop browser with the sharper CTX layer, extra rock detail, and rover visible; Auto-Walk was checked in the prior visor pass.
+- Browser checks: desktop and 390 px viewport; no horizontal overflow at mobile width; waypoint selection, WP1 blocked start, default route restoration, surface/mineral switching, camera controls, and keyboard profile scrubbing. The rebuilt visor was inspected with the sharper CTX layer, extra rock detail, terrain scan, slope report, arrival card, and mobile controls; Auto-Walk was checked in the prior visor pass.
 - Browser console during these checks: no warning or error entries.
 - The visor detail image, updated metadata and source notes, and reproduction script are included in the checksum manifest. Existing pack text may differ by CRLF line endings in this Windows checkout.
 - No new dependencies, telemetry, or external runtime services. The new source tiles were fetched during asset preparation; runtime fetch call sites remain local asset URLs.

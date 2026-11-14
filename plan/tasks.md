@@ -73,6 +73,7 @@ Status values: `planned`, `in progress`, `blocked`, `done`, `deferred`.
 | E5 | Route/profile regression suite and configured walk-back reserve correction | six tests passing locally |
 | B6 | Higher-detail local CTX crop for visor, denser display mesh, detailed illustrative scout rover, and corrected visor geology key | implemented on feature branch; browser, test, offline build, and new asset hashes checked locally |
 | B7 | Progress-driven forward camera, continuous visor scrubber, route guide pulse, and dust/haze polish | implemented on feature branch; final QA and PR review pending |
+| B8 | Data-backed visor scan, route-slope markers, arrival moment, and compact-screen framing | implemented on feature branch; final QA and PR review pending |
 | A5 | Review visual integration and merge/deploy | pending A review; no commit/push performed |
 
 ## Critical Path
