@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { assetUrl } from "../lib/assets";
 import { cellToWorld, inBounds, worldToCell, type Cell } from "../lib/geo";
-import { SURFACE_TEXTURES } from "../lib/gale";
+import { mineralTexturePath, SURFACE_TEXTURES } from "../lib/gale";
 import { assertThreeLoaded, THREE } from "../lib/three";
 import type {
   GaleRouteResult,
@@ -23,6 +23,8 @@ export interface TerrainViewProps {
   maxSlopeDeg: number;
   showRoute: boolean;
   resetViewKey: number;
+  mineralBand: string | null;
+  showGeology: boolean;
   onPick: (cell: Cell) => void;
   onHover: (cell: Cell | null) => void;
   onWaypointSelect: (id: string) => void;
@@ -39,6 +41,8 @@ interface SceneState {
   routeGroup: any;
   markerGroup: any;
   materials: Record<TerrainSurface, any>;
+  mineralMaterial: any;
+  geologyGroup: any;
   resetView: () => void;
 }
 
@@ -68,6 +72,34 @@ function clearGroup(group: any): void {
 
 function applySurface(state: SceneState, surface: TerrainSurface): void {
   state.terrainMesh.material = state.materials[surface];
+}
+
+function buildGeologyGroup(terrain: GaleTerrain): any {
+  const group = new THREE.Group();
+  const width = terrain.meta.width;
+  const height = terrain.meta.height;
+  const points: any[] = [];
+  const edge = (row: number, col: number): any => {
+    const world = cellToWorld(row, col, terrain.patch);
+    const y = terrain.elevation[row * width + col] - terrain.minElevation + 15;
+    return new THREE.Vector3(world.x, y, world.z);
+  };
+  for (let col = 0; col < width; col += 1) points.push(edge(0, col));
+  for (let row = 1; row < height; row += 1) points.push(edge(row, width - 1));
+  for (let col = width - 2; col >= 0; col -= 1) points.push(edge(height - 1, col));
+  for (let row = height - 2; row >= 1; row -= 1) points.push(edge(row, 0));
+  points.push(points[0].clone());
+  const geometry = new THREE.BufferGeometry().setFromPoints(points);
+  const material = new THREE.LineBasicMaterial({
+    color: 0xff66ff,
+    depthTest: false,
+    transparent: true,
+  });
+  const line = new THREE.Line(geometry, material);
+  line.renderOrder = 25;
+  group.add(line);
+  group.visible = false;
+  return group;
 }
 
 function makeLabel(text: string, color: string): any {
@@ -459,6 +491,12 @@ export function TerrainView(props: TerrainViewProps) {
     const terrainMesh = new THREE.Mesh(geometry, materials.ctx);
     scene.add(terrainMesh);
 
+    const mineralMaterial = new THREE.MeshBasicMaterial({
+      side: THREE.DoubleSide,
+    });
+    const geologyGroup = buildGeologyGroup(terrain);
+    scene.add(geologyGroup);
+
     const decorGroup = addDecor(scene, widthMeters, depthMeters);
     const routeGroup = new THREE.Group();
     const markerGroup = new THREE.Group();
@@ -475,6 +513,8 @@ export function TerrainView(props: TerrainViewProps) {
       routeGroup,
       markerGroup,
       materials,
+      mineralMaterial,
+      geologyGroup,
       resetView,
     };
     sceneRef.current = state;
@@ -689,6 +729,9 @@ export function TerrainView(props: TerrainViewProps) {
       clearGroup(markerGroup);
       disposeObject(terrainMesh);
       clearGroup(decorGroup);
+      clearGroup(geologyGroup);
+      if (mineralMaterial.map) mineralMaterial.map.dispose();
+      mineralMaterial.dispose();
       for (const material of Object.values(materials)) {
         if (material.map) material.map.dispose();
         material.dispose();
@@ -704,12 +747,53 @@ export function TerrainView(props: TerrainViewProps) {
 
   useEffect(() => {
     const state = sceneRef.current;
-    if (state) applySurface(state, props.surface);
-  }, [props.surface]);
+    if (state && !props.mineralBand) applySurface(state, props.surface);
+  }, [props.surface, props.mineralBand]);
 
   useEffect(() => {
     const state = sceneRef.current;
-    if (state) state.terrainMesh.scale.y = props.exaggeration;
+    if (!state) return;
+    const band = props.mineralBand;
+    if (!band) {
+      applySurface(state, propsRef.current.surface);
+      return;
+    }
+    let cancelled = false;
+    new THREE.TextureLoader().load(
+      assetUrl(mineralTexturePath(band)),
+      (texture: any) => {
+        if (cancelled || !sceneRef.current) {
+          texture.dispose();
+          return;
+        }
+        texture.encoding = THREE.sRGBEncoding;
+        texture.anisotropy = state.renderer.capabilities.getMaxAnisotropy();
+        if (state.mineralMaterial.map) state.mineralMaterial.map.dispose();
+        state.mineralMaterial.map = texture;
+        state.mineralMaterial.needsUpdate = true;
+        state.terrainMesh.material = state.mineralMaterial;
+      },
+      undefined,
+      () => {
+        if (!cancelled) setTextureError(`mineral ${band}`);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [props.mineralBand]);
+
+  useEffect(() => {
+    const state = sceneRef.current;
+    if (state) state.geologyGroup.visible = props.showGeology;
+  }, [props.showGeology]);
+
+  useEffect(() => {
+    const state = sceneRef.current;
+    if (state) {
+      state.terrainMesh.scale.y = props.exaggeration;
+      state.geologyGroup.scale.y = props.exaggeration;
+    }
   }, [props.exaggeration]);
 
   useEffect(() => {

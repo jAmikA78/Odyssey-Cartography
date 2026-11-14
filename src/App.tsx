@@ -10,7 +10,13 @@ import { SourcesPanel } from "./components/SourcesPanel";
 import { TerrainControls } from "./components/TerrainControls";
 import { TerrainView } from "./components/TerrainView";
 import { WaypointCard } from "./components/WaypointCard";
-import { loadGaleTerrain } from "./lib/gale";
+import {
+  loadGaleTerrain,
+  loadGeologyUnit,
+  loadMineralBandValues,
+  loadMineralsCatalog,
+  loadMineralsMask,
+} from "./lib/gale";
 import { cellLabel, type Cell } from "./lib/geo";
 import { planRoute, type RouteMode } from "./lib/route";
 import {
@@ -22,6 +28,8 @@ import { loadGaleWaypoints } from "./lib/waypoints";
 import type {
   GaleTerrain,
   GaleWaypoint,
+  GeologyUnit,
+  MineralsCatalog,
   GeologyInfo,
   SafetyConfig,
   TerrainSurface,
@@ -65,6 +73,14 @@ function App() {
   const [hoverCell, setHoverCell] = useState<Cell | null>(null);
   const [showRoute, setShowRoute] = useState(true);
   const [resetViewKey, setResetViewKey] = useState(0);
+  const [minerals, setMinerals] = useState<MineralsCatalog | null>(null);
+  const [mineralBand, setMineralBand] = useState<string | null>(null);
+  const [mineralValues, setMineralValues] = useState<Float32Array | null>(
+    null,
+  );
+  const [mineralMask, setMineralMask] = useState<Float32Array | null>(null);
+  const [showGeology, setShowGeology] = useState(false);
+  const [geologyUnit, setGeologyUnit] = useState<GeologyUnit | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -82,6 +98,20 @@ function App() {
         setSafetyConfig(config);
         setWaypoints(nextWaypoints);
         setMaxSlopeDeg(config.maxSlopeDeg);
+
+        try {
+          const [catalog, geology, mask] = await Promise.all([
+            loadMineralsCatalog(),
+            loadGeologyUnit(),
+            loadMineralsMask(),
+          ]);
+          if (cancelled) return;
+          setMinerals(catalog);
+          setGeologyUnit(geology);
+          setMineralMask(mask);
+        } catch {
+          // Mineral and geology layers stay unavailable; terrain still works.
+        }
 
         const startWaypoint =
           nextWaypoints.find((waypoint) => waypoint.label === "WP2") ??
@@ -109,6 +139,25 @@ function App() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!mineralBand) {
+      setMineralValues(null);
+      return;
+    }
+    let cancelled = false;
+    loadMineralBandValues(mineralBand)
+      .then((values) => {
+        if (!cancelled) setMineralValues(values);
+      })
+      .catch(() => {
+        if (!cancelled) setMineralValues(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [mineralBand]);
+
 
   const effectiveSafetyConfig = useMemo(
     () => ({ ...safetyConfig, maxSlopeDeg }),
@@ -210,6 +259,8 @@ function App() {
                 maxSlopeDeg={maxSlopeDeg}
                 showRoute={showRoute}
                 resetViewKey={resetViewKey}
+                mineralBand={mineralBand}
+                showGeology={showGeology}
                 onPick={handlePick}
                 onHover={setHoverCell}
                 onWaypointSelect={handleWaypointSelect}
@@ -224,6 +275,14 @@ function App() {
                 onResetView={() => setResetViewKey((key) => key + 1)}
                 hoverCell={hoverCell}
                 maxSlopeDeg={maxSlopeDeg}
+                minerals={minerals}
+                mineralBand={mineralBand}
+                onMineralBandChange={setMineralBand}
+                mineralValues={mineralValues}
+                mineralMask={mineralMask}
+                showGeology={showGeology}
+                onShowGeologyChange={setShowGeology}
+                geologyUnit={geologyUnit}
                 geologyInfo={geologyInfo}
               />
               <Legend

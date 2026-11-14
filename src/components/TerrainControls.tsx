@@ -1,4 +1,10 @@
-import type { GaleTerrain, GeologyInfo, TerrainSurface } from "../types";
+import type {
+  GaleTerrain,
+  GeologyUnit,
+  MineralsCatalog,
+  GeologyInfo,
+  TerrainSurface,
+} from "../types";
 import { cellLabel, type Cell } from "../lib/geo";
 
 interface TerrainControlsProps {
@@ -10,6 +16,14 @@ interface TerrainControlsProps {
   onResetView: () => void;
   hoverCell: Cell | null;
   maxSlopeDeg: number;
+  minerals: MineralsCatalog | null;
+  mineralBand: string | null;
+  onMineralBandChange: (band: string | null) => void;
+  mineralValues: Float32Array | null;
+  mineralMask: Float32Array | null;
+  showGeology: boolean;
+  onShowGeologyChange: (show: boolean) => void;
+  geologyUnit: GeologyUnit | null;
   geologyInfo: GeologyInfo | null;
 }
 
@@ -36,6 +50,14 @@ export function TerrainControls({
   onResetView,
   hoverCell,
   maxSlopeDeg,
+  minerals,
+  mineralBand,
+  onMineralBandChange,
+  mineralValues,
+  mineralMask,
+  showGeology,
+  onShowGeologyChange,
+  geologyUnit,
   geologyInfo,
 }: TerrainControlsProps) {
   const index = hoverCell
@@ -43,6 +65,16 @@ export function TerrainControls({
     : -1;
   const hoverElevation = index >= 0 ? terrain.elevation[index] : null;
   const hoverSlope = index >= 0 ? terrain.slope[index] : null;
+  const activeBandMeta =
+    minerals && mineralBand ? (minerals.bands[mineralBand] ?? null) : null;
+  const hoverMineral =
+    index >= 0 && mineralBand && mineralValues && mineralValues.length > index
+      ? mineralValues[index]
+      : null;
+  const hoverMineralFilled =
+    index >= 0 && mineralMask && mineralMask.length > index
+      ? mineralMask[index] === 0
+      : false;
 
   return (
     <div className="terrain-controls">
@@ -62,10 +94,69 @@ export function TerrainControls({
           ))}
         </div>
         <p className="control-note">
-          {surface === "geology" && geologyInfo
-            ? `USGS SIM 3292 · Unit ${geologyInfo.unitCode} (${geologyInfo.unitName})`
-            : SURFACE_NOTES[surface]}
+          {mineralBand
+            ? "Mineral overlay active - clear it to change the base surface."
+            : surface === "geology" && geologyInfo
+              ? `USGS SIM 3292 · Unit ${geologyInfo.unitCode} (${geologyInfo.unitName})`
+              : SURFACE_NOTES[surface]}
         </p>
+      </div>
+
+      <div className="control-block">
+        <label className="control-label" htmlFor="mineral">
+          Mineral layer (CRISM spectral indices)
+        </label>
+        <select
+          id="mineral"
+          value={mineralBand ?? ""}
+          onChange={(event) =>
+            onMineralBandChange(event.target.value || null)
+          }
+        >
+          <option value="">Off</option>
+          {minerals
+            ? Object.entries(minerals.bands).map(([band, meta]) => (
+                <option key={band} value={band}>
+                  {band} - {meta.title}
+                </option>
+              ))
+            : null}
+        </select>
+        {activeBandMeta ? (
+          <p className="control-note" id="mineral-note">
+            {activeBandMeta.title}: {activeBandMeta.description} Range in
+            patch: {activeBandMeta.patch_min.toPrecision(3)} to{" "}
+            {activeBandMeta.patch_max.toPrecision(3)}. Dark = low, bright =
+            high (2-98% stretch).
+          </p>
+        ) : (
+          <p className="control-note" id="mineral-note">
+            Orbital spectral indices from one 2007 CRISM observation; candidate
+            signatures, not abundances or soil chemistry. A west/southwest
+            wedge (2.8% of cells) is gap-filled, not measured; hovering those
+            cells says so instead of showing a value.
+          </p>
+        )}
+      </div>
+
+      <div className="control-block">
+        <label className="control-label" htmlFor="geology">
+          <input
+            id="geology"
+            type="checkbox"
+            checked={showGeology}
+            onChange={(event) => onShowGeologyChange(event.target.checked)}
+          />{" "}
+          Geology overlay (USGS SIM3292, regional 1:20M)
+        </label>
+        {showGeology ? (
+          <p className="control-note" id="geology-note">
+            {geologyUnit
+              ? `${geologyUnit.unit} - ${geologyUnit.unitdesc}. The whole patch falls inside this one regional unit; broad context, not local hazards.`
+              : "Regional geology unit boundary. Broad context, not local hazards."}
+          </p>
+        ) : null}
+
       </div>
 
       <div className="control-block">
@@ -93,6 +184,11 @@ export function TerrainControls({
             <p>
               {cellLabel(hoverCell)} · {Math.round(hoverElevation)} m ·{" "}
               {hoverSlope.toFixed(1)}°
+              {hoverMineral !== null && mineralBand
+                ? hoverMineralFilled
+                  ? ` · ${mineralBand} no measurement (gap-filled)`
+                  : ` · ${mineralBand} ${hoverMineral.toPrecision(3)}`
+                : ""}
             </p>
             <p className="control-note">
               {hoverSlope > maxSlopeDeg

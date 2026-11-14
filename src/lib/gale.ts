@@ -2,7 +2,9 @@ import { assetUrl } from "./assets";
 import type {
   GalePatchMetadata,
   GaleTerrain,
+  GeologyUnit,
   GridMeta,
+  MineralsCatalog,
   TerrainSurface,
 } from "../types";
 
@@ -84,5 +86,56 @@ export async function loadGaleTerrain(
     noGo: buildNoGo(slope, DEFAULT_MAX_SLOPE_DEG),
     minElevation,
     maxElevation,
+  };
+}
+
+export const MINERALS_CATALOG_PATH = "data/gale/data/minerals/minerals.json";
+export const GEOLOGY_PATH = "data/gale/data/geology.geojson";
+
+export function mineralTexturePath(band: string): string {
+  return `data/gale/data/minerals/min_${band}.png`;
+}
+
+export async function loadMineralsCatalog(
+  signal?: AbortSignal,
+): Promise<MineralsCatalog> {
+  const response = await fetchChecked(MINERALS_CATALOG_PATH, signal);
+  return (await response.json()) as MineralsCatalog;
+}
+
+export async function loadMineralBandValues(
+  band: string,
+  signal?: AbortSignal,
+): Promise<Float32Array> {
+  const response = await fetchChecked(
+    `data/gale/data/minerals/min_${band}.f32`,
+    signal,
+  );
+  return new Float32Array(await response.arrayBuffer());
+}
+
+export const MINERALS_MASK_PATH =
+  "data/gale/data/minerals/minerals_mask.f32";
+
+export async function loadMineralsMask(
+  signal?: AbortSignal,
+): Promise<Float32Array> {
+  const response = await fetchChecked(MINERALS_MASK_PATH, signal);
+  return new Float32Array(await response.arrayBuffer());
+}
+
+export async function loadGeologyUnit(
+  signal?: AbortSignal,
+): Promise<GeologyUnit | null> {
+  const response = await fetchChecked(GEOLOGY_PATH, signal);
+  const geojson = (await response.json()) as {
+    features?: Array<{ properties?: Record<string, unknown> }>;
+  };
+  const properties = geojson.features?.[0]?.properties;
+  if (!properties) return null;
+  return {
+    unit: String(properties.unit ?? "unknown"),
+    unitdesc: String(properties.unitdesc ?? "unknown unit"),
+    note: "USGS SIM3292 1:20M regional context, clipped to this patch; not local hazards.",
   };
 }
