@@ -26,6 +26,7 @@ interface HelmetHudProps {
 
 const EYE_HEIGHT_M = 2.2;
 const EXAGGERATION = 1.5;
+const SCOUT_ROVER_SCALE = 0.88;
 
 function compassDirection(deg: number): string {
   const dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
@@ -870,7 +871,7 @@ export function HelmetHud({
     }
 
     const roverGroup = createScienceRover(THREE);
-    roverGroup.scale.setScalar(1.35);
+    roverGroup.scale.setScalar(SCOUT_ROVER_SCALE);
     scene.add(roverGroup);
     const shadowCanvas = document.createElement("canvas");
     shadowCanvas.width = 128;
@@ -1073,7 +1074,7 @@ export function HelmetHud({
         const run = Math.max(1, Math.hypot(ahead.x - crew.x, ahead.z - crew.z));
         pathPitch = Math.max(-0.2, Math.min(0.1, -0.055 - Math.atan2(rise, run) * 0.22));
         const mobileVisor = window.innerWidth <= 600;
-        const scoutForwardOffset = mobileVisor ? 12 : 7.5;
+        const scoutForwardOffset = mobileVisor ? 12 : 8.5;
         const scoutSideOffset = mobileVisor ? 0 : 3.2;
         const scoutX = crew.x + direction.x * scoutForwardOffset + direction.z * scoutSideOffset;
         const scoutZ = crew.z + direction.z * scoutForwardOffset - direction.x * scoutSideOffset;
@@ -1081,8 +1082,8 @@ export function HelmetHud({
         const roverYaw = Math.atan2(direction.x, direction.z);
         const cosine = Math.cos(roverYaw);
         const sine = Math.sin(roverYaw);
-        const wheelX = 1.15 * 1.35;
-        const wheelZ = 1.05 * 1.35;
+        const wheelX = 1.15 * SCOUT_ROVER_SCALE;
+        const wheelZ = 1.05 * SCOUT_ROVER_SCALE;
         const wheelGround = (x: number, z: number) => sampleWorldY(
           scoutX + x * cosine + z * sine,
           scoutZ - x * sine + z * cosine,
