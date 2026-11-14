@@ -1,0 +1,175 @@
+/* Expedition console: local fonts and assets keep the experience offline. */
+:root {
+  --bg: #0b1115;
+  --panel: #111b21;
+  --panel-raised: #162229;
+  --panel-border: #29383d;
+  --text: #f1f0e9;
+  --muted: #9cacae;
+  --accent: #e6a775;
+  --accent-soft: #f9bc80;
+  --ok: #65e3ce;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-synthesis: none;
+}
+body { background: #0b1115; }
+button, a, summary { -webkit-tap-highlight-color: transparent; }
+button { transition: background .18s, color .18s, border-color .18s, transform .18s; }
+button:not(:disabled):hover { border-color: var(--accent-soft); }
+button:disabled { opacity: .4; cursor: not-allowed; }
+input[type="range"], input[type="checkbox"] { accent-color: var(--accent-soft); }
+select:focus-visible, summary:focus-visible { outline: 2px solid var(--accent-soft); outline-offset: 4px; }
+[hidden] { display: none !important; }
+.eyebrow { display: block; color: var(--muted); font: 10px/1.5 "Consolas", monospace; letter-spacing: .15em; text-transform: uppercase; }
+.app-header { min-height: 90px; padding: 18px 30px; background: #0b1115; }
+.app-brand { display: flex; gap: 14px; align-items: center; }
+.brand-orbit { font-size: 46px; color: var(--accent-soft); line-height: 1; transform: rotate(-35deg); }
+.app-brand h1 { font-size: 23px; font-weight: 600; letter-spacing: .23em; }
+.app-brand h1 span { color: var(--accent-soft); font-weight: 300; }
+.app-brand p { font-size: 11px; letter-spacing: .1em; margin-top: 4px; }
+.header-location { display: grid; gap: 5px; font-size: 12px; }
+.header-location b { color: #627575; padding: 0 10px; font-weight: 400; }
+.app-badge { display: flex; align-items: center; gap: 8px; border-color: #33423e; color: #b7cac1; border-radius: 4px; font: 10px "Consolas", monospace; padding: 9px 11px; }
+.app-badge i { width: 5px; height: 5px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 10px #65e3c655; }
+.caveat-banner { background: #171a18; padding: 9px 30px; color: #aaa89c; font-size: 11px; }
+.caveat-banner strong { font-weight: 500; margin-right: 10px; color: #d6b591; }
+.caveat-banner summary { cursor: pointer; list-style: none; }
+.caveat-banner summary span { float: right; color: #d6b591; }
+.caveat-banner p { max-width: 1100px; line-height: 1.7; }
+.app-main { height: calc(100dvh - 170px); min-height: 650px; padding: 18px 22px; gap: 18px; flex: none; }
+.map-stage { display: flex; flex-direction: column; min-height: 0; border-color: #2a393d; border-radius: 12px; background: #10191f; }
+.terrain-viewport { position: relative; flex: 1; min-height: 400px; overflow: hidden; background: radial-gradient(ellipse at 58% 38%, #344047 0%, #1b2a31 37%, #0c161c 78%); }
+.terrain-viewport::after { content: ""; position: absolute; inset: 0; box-shadow: inset 0 0 80px #03090d55; pointer-events: none; }
+.terrain-view { position: absolute; inset: 0; }
+.map-title { position: absolute; z-index: 1; top: 25px; left: 26px; pointer-events: none; }
+.map-title .eyebrow { color: #d4b79b; font-size: 9px; }
+.map-title h2 { font-size: clamp(24px, 2.6vw, 40px); font-weight: 350; letter-spacing: -.045em; margin: 7px 0; }
+.map-title p { margin: 0; color: #a9b7b8; font-size: 11px; }
+.terrain-controls { top: 22px; right: 22px; left: auto; width: 285px; max-width: calc(100% - 44px); max-height: calc(100% - 130px); display: block; overflow: auto; z-index: 8; }
+.terrain-controls:not([open]) { width: auto; overflow: visible; }
+.terrain-controls > summary { border: 1px solid #4b5c5d; border-radius: 6px; background: #111d23e8; padding: 10px 13px; font-size: 11px; cursor: pointer; list-style: none; user-select: none; }
+.terrain-controls > summary > span:first-child { font-size: 17px; vertical-align: -1px; padding-right: 6px; }
+.layer-current { font: 9px "Consolas", monospace; text-transform: uppercase; color: var(--accent-soft); margin-left: 12px; }
+.layer-drawer { padding: 7px 0; display: grid; gap: 6px; }
+.control-block { border-color: #38494d; background: #101c23f5; border-radius: 6px; padding: 12px; backdrop-filter: blur(15px); }
+.control-label { font-size: 10px; margin-bottom: 6px; }
+.control-note { font-size: 11px; }
+.control-block .segmented { margin: 5px 0; }
+.control-block .segmented button { min-width: 0; font-size: 10px; padding: 7px 3px; }
+.scene-toolbar { position: absolute; bottom: 35px; left: 22px; z-index: 3; display: grid; gap: 7px; }
+.camera-buttons, .scene-toggles { display: flex; gap: 4px; }
+.scene-toolbar button { background: #101c24e8; color: #c4d0cd; border: 1px solid #425458; padding: 8px 10px; border-radius: 5px; font-size: 11px; cursor: pointer; }
+.scene-toolbar button span { margin-left: 4px; }
+.scene-toggles button { font: 9px "Consolas", monospace; padding: 6px 10px; text-transform: uppercase; }
+.scene-toggles button[aria-pressed="true"] { color: #f9bc80; border-color: #857056; background: #342b22d9; }
+.terrain-hint { border: 0; background: none; left: 22px; right: auto; bottom: 9px; padding: 0; font-size: 9px; color: #9aaaae; }
+.map-legend { bottom: 20px; right: 22px; max-width: 210px; border: 0; border-radius: 0; border-left: 1px solid #526569; background: #101b228c; padding: 8px 10px; z-index: 2; }
+.map-legend-title { font: 9px/1.5 "Consolas", monospace; letter-spacing: .04em; }
+.legend-row { font-size: 10px; }
+.legend-attribution { font-size: 9px; line-height: 1.6; border: 0; margin: 0; padding: 0; }
+.traverse-profile { position: relative; flex-shrink: 0; padding: 15px 24px 10px; background: #101a20; border-top: 1px solid #33444a; min-height: 170px; }
+.profile-topline { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.profile-topline strong { display: block; font-size: 15px; font-weight: 450; margin-top: 3px; }
+.profile-topline .eyebrow { font-size: 9px; }
+.play-button { background: #dba475; color: #182027; border: 1px solid #dba475; border-radius: 5px; padding: 9px 12px; font-size: 11px; font-weight: 600; cursor: pointer; }
+.play-button span { margin-right: 6px; }
+.profile-chart { position: relative; height: 62px; margin-top: 5px; }
+.profile-chart svg { display: block; width: 100%; height: 100%; }
+.profile-chart input { position: absolute; inset: 0; margin: 0; width: 100%; height: 100%; opacity: .01; cursor: ew-resize; }
+.profile-chart:focus-within { outline: 1px solid var(--accent-soft); outline-offset: 3px; }
+.profile-labels { display: flex; justify-content: space-between; gap: 7px; font: 10px "Consolas", monospace; color: #bdcbc7; }
+.profile-note { color: #8a9b9e; font-size: 9px; margin: 8px 0 0; }
+.side-panel { flex: 0 0 345px; width: 345px; max-height: none; padding: 0 4px 10px; gap: 0; scrollbar-color: #34474b transparent; }
+.mission-heading { padding: 9px 8px 20px; }
+.mission-heading h2 { margin: 7px 0; font-weight: 400; font-size: 23px; letter-spacing: -.04em; }
+.mission-heading p { margin: 0; font-size: 11px; color: var(--muted); }
+.mission-tabs { display: flex; gap: 0; border-bottom: 1px solid #334348; margin-bottom: 16px; }
+.mission-tabs button { flex: 1; border: 0; border-bottom: 2px solid transparent; color: #9babad; background: transparent; cursor: pointer; padding: 11px 3px; font-size: 12px; }
+.mission-tabs button span { font: 9px "Consolas", monospace; margin-right: 7px; opacity: .6; }
+.mission-tabs button[aria-pressed="true"] { color: #f3bd8f; border-bottom-color: #f3bd8f; }
+.panel-stack { display: flex; flex-direction: column; gap: 13px; }
+.panel { padding: 16px; border-radius: 8px; background: linear-gradient(130deg, #152229, #101a20); border-color: #2a3b40; }
+.panel-heading { align-items: center; margin-bottom: 12px; }
+.panel-heading h2 { font-size: 11px; letter-spacing: .09em; font-weight: 600; }
+.panel-tag { font: 9px "Consolas", monospace; color: #8eaaa9; letter-spacing: 0; }
+.panel-note { font-size: 11px; line-height: 1.7; }
+.segmented { gap: 4px; }
+.segmented button { min-width: 0; padding: 9px 6px; font-size: 10px; border-color: #35464b; }
+.segmented button.active { background: #413327; border-color: #aa825f; color: #f3c49e; }
+.cell-pair div, .stat-grid div { background: #17272e; border: 0; border-left: 1px solid #384e54; border-radius: 0; padding: 10px; }
+.cell-pair dd { font: 11px "Consolas", monospace; }
+.stat-grid dd { font-size: 20px; font-weight: 350; margin-top: 5px; }
+.stat-grid dt, .cell-pair dt { font-size: 9px; }
+.status-row { font-size: 11px; font-weight: 500; padding: 9px 10px; }
+.slider-label, .checkbox-label { font-size: 11px; line-height: 1.5; }
+.ghost-button { font-size: 11px; padding: 8px 10px; }
+.warning-list, .assumptions, .source-list { font-size: 11px; line-height: 1.7; }
+.waypoint-card { padding: 14px; border-color: #33464b; background: #14232a; transition: border-color .2s, background .2s; }
+.waypoint-card.selected { background: #26332f; border-color: #c69b70; box-shadow: none; }
+.waypoint-heading strong { font-size: 12px; font-weight: 500; }
+.waypoint-select { color: var(--text); background: none; border: 0; padding: 3px 0; text-align: left; cursor: pointer; font-size: 12px; }
+.comparison-grid { display: grid; gap: 7px; margin-top: 13px; }
+.comparison-option { display: grid; gap: 7px; width: 100%; text-align: left; border: 1px solid #33464b; border-radius: 6px; background: #15242b; color: var(--text); padding: 11px; cursor: pointer; }
+.comparison-option[aria-pressed="true"] { border-color: #dba475; background: #282a27; }
+.comparison-name { font-size: 12px; display: flex; align-items: center; gap: 8px; }
+.comparison-radio { display: inline-block; width: 9px; height: 9px; border: 1px solid #82999b; border-radius: 50%; }
+.comparison-option[aria-pressed="true"] .comparison-radio { border-color: #dba475; background: #dba475; box-shadow: 0 0 0 3px #dba47522; }
+.comparison-description, .comparison-caveat { font-size: 10px; color: var(--muted); line-height: 1.6; }
+.comparison-metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px; font: 10px "Consolas", monospace; color: #a9c4c1; }
+.comparison-metrics strong { color: #eff0e9; font-size: 13px; font-weight: 500; }
+.comparison-blocked { color: var(--blocked); font-size: 10px; }
+.comparison-caveat { margin: 10px 0 0; }
+.waypoint-meta { margin-top: 7px; font: 10px/1.5 "Consolas", monospace; }
+.waypoint-card .chip { font-size: 8px; }
+.app-footer { padding: 5px 26px 10px; background: none; border: 0; }
+.app-footer p { font-size: 9px; color: #819498; }
+@media (min-width: 1600px) { .side-panel { flex-basis: 380px; width: 380px; } .app-main { padding: 22px 30px; gap: 24px; } }
+@media (max-width: 1200px) { .map-legend { display: none; } .map-title h2 { font-size: 29px; } .map-title p { display: none; } .header-location { display: none; } .side-panel { flex-basis: 320px; width: 320px; } .terrain-controls { top: 105px; } }
+@media (max-width: 980px) {
+  .app-main { height: auto; min-height: 0; padding: 14px; gap: 20px; }
+  .map-stage { height: auto; min-height: 0; flex: none; }
+  .terrain-viewport { flex: none; height: 62vh; min-height: 440px; }
+  .side-panel { flex: none; width: 100%; overflow: visible; }
+  .mission-heading { padding-top: 0; }
+  .terrain-controls { top: 22px; }
+  .panel-stack { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  .panel-stack .panel:only-child { grid-column: 1 / -1; }
+  .app-badge { margin: 0; }
+}
+@media (max-width: 600px) {
+  .app-header { padding: 16px; min-height: 80px; gap: 12px; flex-wrap: nowrap; }
+  .brand-orbit { font-size: 34px; }
+  .app-brand { gap: 9px; }
+  .app-brand h1 { font-size: 18px; }
+  .app-brand p { font-size: 9px; }
+  .app-badge { font-size: 8px; max-width: 105px; white-space: normal; line-height: 1.5; padding: 6px; }
+  .app-badge i { flex-shrink: 0; }
+  .caveat-banner { padding: 9px 16px; font-size: 10px; line-height: 1.7; }
+  .caveat-banner strong { display: block; }
+  .caveat-banner summary span { display: none; }
+  .app-main { padding: 10px; }
+  .terrain-viewport { height: 510px; min-height: 0; }
+  .terrain-view { position: absolute; height: auto; min-height: 0; }
+  .map-title { left: 17px; top: 20px; }
+  .map-title h2 { font-size: 30px; }
+  .map-title .eyebrow { font-size: 8px; }
+  .terrain-controls { position: absolute; top: 100px; right: 16px; width: 270px; padding: 0; max-height: 285px; max-width: calc(100% - 32px); }
+  .terrain-controls:not([open]) { width: auto; }
+  .layer-drawer { display: grid; }
+  .control-block.readout, .patch-meta { display: block; }
+  .scene-toolbar { left: 16px; bottom: 26px; }
+  .scene-toolbar button { font-size: 10px; padding: 9px; min-height: 34px; }
+  .scene-toggles button { font-size: 9px; }
+  .terrain-hint { display: block; left: 16px; bottom: 7px; font-size: 8px; }
+  .traverse-profile { padding: 14px 16px; min-height: 177px; }
+  .profile-topline strong { font-size: 13px; }
+  .play-button { padding: 9px; font-size: 10px; }
+  .profile-labels { font-size: 8px; }
+  .profile-note { font-size: 8px; line-height: 1.6; }
+  .panel-stack { display: flex; }
+  .cell-pair, .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mission-heading { padding-top: 8px; }
+  .mission-tabs button { min-height: 44px; }
+  .app-footer { padding: 8px 16px 20px; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; } }

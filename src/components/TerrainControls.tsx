@@ -77,7 +77,9 @@ export function TerrainControls({
       : false;
 
   return (
-    <div className="terrain-controls">
+    <details className="terrain-controls">
+      <summary><span aria-hidden="true">▱</span> Layers & terrain <span className="layer-current">{mineralBand ?? surface}</span></summary>
+      <div className="layer-drawer">
       <div className="control-block">
         <span className="control-label">Surface</span>
         <div className="segmented" role="group" aria-label="Terrain surface">
@@ -95,7 +97,7 @@ export function TerrainControls({
         </div>
         <p className="control-note">
           {mineralBand
-            ? "Mineral overlay active - clear it to change the base surface."
+            ? "Mineral overlay active. Choose a surface above to return to the base map."
             : surface === "geology" && geologyInfo
               ? `USGS SIM 3292 · Unit ${geologyInfo.unitCode} (${geologyInfo.unitName})`
               : SURFACE_NOTES[surface]}
@@ -214,6 +216,7 @@ export function TerrainControls({
           km across
         </p>
       </div>
-    </div>
+      </div>
+    </details>
   );
 }

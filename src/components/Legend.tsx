@@ -5,6 +5,7 @@ interface LegendProps {
   surface: TerrainSurface;
   maxSlopeDeg: number;
   geologyInfo: GeologyInfo | null;
+  mineralBand?: string | null;
 }
 
 const SURFACE_NAMES: Record<TerrainSurface, string> = {
@@ -14,17 +15,17 @@ const SURFACE_NAMES: Record<TerrainSurface, string> = {
   geology: "USGS SIM 3292 Geologic Unit (1:20M)",
 };
 
-export function Legend({ surface, maxSlopeDeg, geologyInfo }: LegendProps) {
+export function Legend({ surface, maxSlopeDeg, geologyInfo, mineralBand }: LegendProps) {
   return (
     <div className="map-legend" aria-label="Map legend and attribution">
-      <div className="map-legend-title">Legend · {SURFACE_NAMES[surface]}</div>
+      <div className="map-legend-title">Legend · {mineralBand ? `CRISM ${mineralBand} spectral index` : SURFACE_NAMES[surface]}</div>
 
       <div className="legend-row">
         <span className="legend-line" />
         <span>Computed A* Traverse (limit ≤ {maxSlopeDeg}°)</span>
       </div>
 
-      {surface === "slope" && (
+      {!mineralBand && surface === "slope" && (
         <div>
           <div className="legend-slope-bar" />
           <div className="legend-slope-labels">
@@ -35,7 +36,7 @@ export function Legend({ surface, maxSlopeDeg, geologyInfo }: LegendProps) {
         </div>
       )}
 
-      {surface === "geology" && (
+      {!mineralBand && surface === "geology" && (
         <div className="legend-row">
           <span className="legend-swatch-geology" />
           <span>
@@ -47,7 +48,7 @@ export function Legend({ surface, maxSlopeDeg, geologyInfo }: LegendProps) {
       )}
 
       <div className="legend-attribution">
-        Data: NASA/JPL/USGS Gale DEM (20 m) · Mars Trek CTX · USGS SIM 3292.
+        {mineralBand ? "CRISM FRT000058A3 · candidate signatures, not abundance. Gap-filled cells flagged on hover." : "NASA/JPL/USGS DEM · CTX · stylized relief. Contours: 100 m. Cutaway is decorative."}
       </div>
     </div>
   );

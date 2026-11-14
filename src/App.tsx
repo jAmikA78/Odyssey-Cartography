@@ -10,6 +10,8 @@ import { SourcesPanel } from "./components/SourcesPanel";
 import { TerrainControls } from "./components/TerrainControls";
 import { TerrainView } from "./components/TerrainView";
 import { WaypointCard } from "./components/WaypointCard";
+import { TraverseProfile } from "./components/TraverseProfile";
+import { RouteComparison } from "./components/RouteComparison";
 import {
   loadGaleTerrain,
   loadGeologyUnit,
@@ -38,17 +40,17 @@ import type {
 const ROUTE_MODES: Array<{ id: RouteMode; label: string; hint: string }> = [
   {
     id: "balanced",
-    label: "Shortest + Easiest + Safest",
+    label: "Balanced",
     hint: "Balances short distance, minimal uphill climb, and gentle slopes.",
   },
   {
     id: "shortest",
-    label: "Shortest",
-    hint: "Minimizes distance while staying within the max slope limit.",
+    label: "Distance",
+    hint: "Prioritizes shorter routes while retaining slope and climb penalties.",
   },
   {
     id: "safest",
-    label: "Safest & Easiest",
+    label: "Gentler slopes",
     hint: "Strongly avoids steep slopes (>15°) and heavy climbs.",
   },
 ];
@@ -81,6 +83,9 @@ function App() {
   const [mineralMask, setMineralMask] = useState<Float32Array | null>(null);
   const [showGeology, setShowGeology] = useState(false);
   const [geologyUnit, setGeologyUnit] = useState<GeologyUnit | null>(null);
+  const [panel, setPanel] = useState<"plan" | "waypoints" | "explore">("plan");
+  const [progress, setProgress] = useState(0);
+  const [playing, setPlaying] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -178,12 +183,26 @@ function App() {
     [route, effectiveSafetyConfig],
   );
 
+  useEffect(() => { setProgress(0); setPlaying(false); }, [route]);
+  useEffect(() => {
+    if (!playing || !route?.ok) return;
+    let last = performance.now();
+    const timer = window.setInterval(() => {
+      const now = performance.now();
+      const delta = Math.min(now - last, 100) / 24000;
+      last = now;
+      if (!document.hidden) setProgress(value => Math.min(1, value + delta));
+    }, 50);
+    return () => window.clearInterval(timer);
+  }, [playing, route]);
+  useEffect(() => { if (progress >= 1) setPlaying(false); }, [progress]);
+
   const handlePick = (cell: Cell): void => {
     const waypoint = waypoints.find(
       (candidate) =>
         candidate.row === cell.row && candidate.col === cell.col,
     );
-    if (waypoint) setSelectedWaypointId(waypoint.id);
+    setSelectedWaypointId(waypoint?.id ?? null);
     if (pickMode === "start") {
       setStart(cell);
       setPickMode("goal");
@@ -194,6 +213,7 @@ function App() {
 
   const handleWaypointSelect = (id: string): void => {
     setSelectedWaypointId(id);
+    setPanel("waypoints");
   };
 
   const handleSetStart = (waypoint: GaleWaypoint): void => {
@@ -235,16 +255,19 @@ function App() {
     <div className="app">
       <header className="app-header">
         <div className="app-brand">
-          <h1>Odyssey</h1>
-          <p>Gale Crater Marswalk Planner</p>
+          <span className="brand-orbit" aria-hidden="true">◒</span>
+          <div><h1>ODYSSEY<span> / </span></h1><p>Beyond the horizon.</p></div>
         </div>
-        <span className="app-badge">Offline 3D demo</span>
+        <div className="header-location"><span className="eyebrow">Mars exploration atlas</span><span>Gale Crater <b> / </b> Northwest Mount Sharp</span></div>
+        <span className="app-badge"><i /> Local data · offline ready</span>
       </header>
 
       <CaveatBanner />
 
       <main className="app-main">
         <section className="map-stage" aria-label="Mars map">
+          <div className="terrain-viewport">
+          <div className="map-title"><span className="eyebrow">Surface operations / Gale demo patch</span><h2>A new perspective.</h2><p>Explore the terrain. Trace your next step.</p></div>
           {terrain ? (
             <>
               <TerrainView
@@ -265,11 +288,12 @@ function App() {
                 onHover={setHoverCell}
                 onWaypointSelect={handleWaypointSelect}
                 onGeologyLoaded={setGeologyInfo}
+                progress={progress}
               />
               <TerrainControls
                 terrain={terrain}
                 surface={surface}
-                onSurfaceChange={setSurface}
+                onSurfaceChange={(value) => { setSurface(value); setMineralBand(null); }}
                 exaggeration={exaggeration}
                 onExaggerationChange={setExaggeration}
                 onResetView={() => setResetViewKey((key) => key + 1)}
@@ -286,6 +310,7 @@ function App() {
                 geologyInfo={geologyInfo}
               />
               <Legend
+                mineralBand={mineralBand}
                 surface={surface}
                 maxSlopeDeg={maxSlopeDeg}
                 geologyInfo={geologyInfo}
@@ -308,9 +333,18 @@ function App() {
               </p>
             </div>
           )}
+          </div>
+          {terrain && <TraverseProfile terrain={terrain} route={route} progress={progress} playing={playing}
+            onProgress={value => { setPlaying(false); setProgress(value); }}
+            onPlay={() => { setShowRoute(true); if (progress >= 1) setProgress(0); setPlaying(value => !value); }} />}
         </section>
 
         <aside className="side-panel" aria-label="Route and safety panels">
+          <div className="mission-heading"><span className="eyebrow">Your expedition</span><h2>Make the next move.</h2><p>A small step. A considered route.</p></div>
+          <nav className="mission-tabs" aria-label="Expedition panels">
+            {([ ["plan", "01", "Plan"], ["waypoints", "02", "Waypoints"], ["explore", "03", "Discover"] ] as const).map(([id, number, label]) => <button key={id} aria-pressed={panel === id} onClick={() => setPanel(id)}><span>{number}</span>{label}</button>)}
+          </nav>
+          <div className="panel-stack" hidden={panel !== "plan"}>
           <section className="panel" aria-labelledby="route-priority-title">
             <div className="panel-heading">
               <h2 id="route-priority-title">Route optimization</h2>
@@ -347,7 +381,9 @@ function App() {
           />
 
           <SafetyPanel safety={safety} route={route} config={effectiveSafetyConfig} />
-
+          <RouteComparison terrain={terrain} start={start} goal={goal} config={effectiveSafetyConfig} mode={routeMode} onMode={setRouteMode} />
+          </div>
+          <div className="panel-stack" hidden={panel !== "explore"}>
           <MissionCard
             terrain={terrain}
             start={start}
@@ -369,7 +405,8 @@ function App() {
          start={start}
          goal={goal}
            />
-           
+          </div>
+          <div className="panel-stack" hidden={panel !== "waypoints"}>
           <section className="panel" aria-labelledby="waypoints-title">
             <div className="panel-heading">
               <h2 id="waypoints-title">Demo waypoints</h2>
@@ -408,10 +445,12 @@ function App() {
               </p>
             ) : null}
           </section>
-
+          </div>
+          <div className="panel-stack" hidden={panel !== "explore"}>
           <PovGallery />
 
           <SourcesPanel />
+          </div>
         </aside>
       </main>
 

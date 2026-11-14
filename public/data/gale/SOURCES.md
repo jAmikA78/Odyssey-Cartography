@@ -16,6 +16,9 @@ Capabilities / API links preserved from prior source pack:
 https://trek.nasa.gov/tiles/Mars/EQ/Gale_CTX_BlockAdj_dd/1.0.0/WMTSCapabilities.xml
 https://trek.nasa.gov/tiles/apidoc/trekAPI.html?body=mars
 
+## Visor detail texture
+The first-person visor uses a separate 932 × 932 pixel grayscale CTX crop of the same geographic bounds (~5.1 m display spacing). It is assembled from nine level-12 tiles (rows 2156–2158, columns 7221–7223) of the Caltech Murray Lab Global CTX Mosaic V01, served by Esri's OnMars/CTX1 MapServer. Source: https://astro.arcgis.com/arcgis/rest/services/OnMars/CTX1/MapServer . Credit: Esri, Caltech Murray Lab, NASA, JPL, MSSS. `rebuild_ctx_detail.ps1` records the exact URL pattern and geographic crop. The mosaic is a different registration from the Mars Trek Gale layer; it is for visual context in the visor, not a new route or mineral-analysis surface. It does not add elevation detail to the 20 m DEM.
+
 ## Geology
 Tanaka et al., 2014, USGS Scientific Investigations Map 3292, Geologic Map of Mars, 1:20M. Official publication read during this build:
 https://pubs.usgs.gov/sim/3292/

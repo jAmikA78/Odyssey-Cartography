@@ -1,6 +1,6 @@
 # Safety Model
 
-Last updated: 2026-11-13
+Last updated: 2026-11-14
 
 ## Purpose and Scope
 
@@ -69,9 +69,12 @@ The implementation evaluates every condition and reports all applicable warnings
 The A* cost is separate from the safety gate:
 
 ```text
-stepCost = stepMeters × (1 + 4 × (cellSlopeDeg / maxSlopeDeg)²)
+stepCost = stepMeters × (1 + slopeWeight × (cellSlopeDeg / maxSlopeDeg)²
+                         + climbWeight × max(0, elevationDelta) / stepMeters
+                         + cautionExtra)
 ```
 
+- Existing mode weights and the >15° caution penalty are documented in [architecture.md](../plan/architecture.md). These modes do not certify safety.
 - `stepMeters` is about 19.924 m orthogonally and 28.18 m diagonally.
 - Cells with slope greater than `maxSlopeDeg` are no-go.
 - A start or destination on a no-go cell returns a blocked result with a specific reason.
@@ -114,6 +117,14 @@ These are outputs from synthetic waypoints and unverified assumptions, not a mis
 | Dose within budget | Normal | Show the estimate with the source and assumption notes. |
 
 The UI must show the numbers and the caveat together.
+
+## Walk-back preview
+
+The existing helmet view and mission card compute a symmetric return along the same route. They reserve a fraction of the maximum duration: `usableHours = maxEvaHours × (1 - suitReserve)`, `roundTripHours = 2 × outboundKm / walkSpeedKmH`, and `marginHours = usableHours - roundTripHours`. A negative margin is beyond the illustrative return limit; a margin below 0.5 h is caution. This is separate from the main one-way suit-hours calculation above.
+
+The visual refresh fixes the walk-back function to read `config.suitReserve` instead of an absent field that silently defaulted to 25%. Default results are unchanged; other configured reserves now work. Regression tests cover a 40% reserve.
+
+Playback speed and decorative 3D effects do not affect any safety calculation.
 
 ## Space-Weather Context
 

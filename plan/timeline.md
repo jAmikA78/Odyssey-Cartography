@@ -25,7 +25,7 @@ All times are **Africa/Cairo**. The event starts Friday at 13:00 and the final s
 
 ## Actual Progress
 
-The offline 3D demo, route planner, safety panel, waypoints, responsive layout, and local sources are implemented and verified locally. Remaining work is documentation reconciliation, final QA, merge/deploy, and submission evidence. The implementation finished ahead of the original feature deadline; the public site still follows `main` until the branch is merged.
+The offline 3D demo, route planner, safety panel, waypoints, responsive layout, and local sources are implemented and verified locally. Remaining work is documentation reconciliation, final QA, merge/deploy, and submission evidence. The local baseline includes merged extensions. A user-requested visual upgrade is recorded in docs/visual-experience.md; public deployment and submission state were not checked during that work.
 
 ## Freeze Rules
 

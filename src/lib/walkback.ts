@@ -40,8 +40,7 @@ export function computeWalkBackEnvelope(
 
   const walkSpeedKmH = config.walkSpeedKmH > 0 ? config.walkSpeedKmH : 1.2;
   const maxEvaHours = config.maxEvaHours > 0 ? config.maxEvaHours : 8;
-  const reserveFraction =
-    (config as { suitReserveFraction?: number }).suitReserveFraction ?? 0.25;
+  const reserveFraction = Math.min(1, Math.max(0, config.suitReserve));
   const usableHours = maxEvaHours * (1 - reserveFraction);
 
   const steps: WalkBackStep[] = [];

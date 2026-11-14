@@ -1,6 +1,6 @@
 # Challenge Interpretation
 
-Last updated: 2026-11-13
+Last updated: 2026-11-14
 
 ## At a Glance
 
@@ -45,13 +45,12 @@ Odyssey answers with an offline 3D Gale Crater terrain, a terrain-aware traverse
 
 ### Dataset Count
 
-The current demo has **two source datasets** — the merged Gale DEM and the CTX texture — presented as three registered surfaces. Hillshade and slope are derived from the DEM and are not independent observations. This distinction is stated in the UI and source notes. If the official rubric requires three independent datasets, the deferred MOLA/THEMIS/geology layers can be revived, but they are not in the current runtime.
+The current local runtime includes the merged DEM, CTX, CRISM spectral indices, and regional USGS geology, plus a Curiosity context gallery. Hillshade, slope, contours, and the elevation profile derive from the DEM; they are not independent observations. The official rubric and dataset qualification remain unverified.
 
 ### Deferred Against the Challenge
 
-- POV imagery is deferred.
-- The printable mission card is deferred.
-- MOLA, THEMIS, and geology context layers are deferred.
+- MOLA and THEMIS context layers are deferred.
+- POV imagery, regional geology, and the printable mission card exist in the integrated baseline.
 - Live space-weather context is deferred.
 
 These are documented gaps, not hidden claims.
@@ -80,7 +79,7 @@ Out of scope / deferred:
 - Real-time mission operations.
 - Meter-scale obstacle detection.
 - Solar-particle-event forecasting.
-- POV imagery and a printable mission card.
+- Operationally verified POV/terrain correspondence.
 - User accounts, persistence, or collaboration.
 - Claims of safety certification.
 

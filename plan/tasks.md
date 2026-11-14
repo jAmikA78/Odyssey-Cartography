@@ -1,6 +1,6 @@
 # Tasks
 
-Last updated: 2026-11-13
+Last updated: 2026-11-14
 
 Status values: `planned`, `in progress`, `blocked`, `done`, `deferred`.
 
@@ -32,9 +32,9 @@ Status values: `planned`, `in progress`, `blocked`, `done`, `deferred`.
 | --- | --- | --- | --- | --- |
 | C0 | Route, safety, and waypoint panel shells | A1 | Panels render with real data | done |
 | C1 | Wire route and safety results into panels | E1 | Distance, time, slope, dose, and warnings match contracts | done |
-| C2 | POV image modal | D2 | Three Gale POV images open with credits | deferred |
+| C2 | POV image modal | D2 | Three Gale POV images open with credits | implemented in integrated baseline |
 | C3 | Responsive 390 px layout and caveats | C1 | No blocking overflow; caveats visible | done |
-| C4 | Printable mission card | C1 | Card previews or prints with route and sources | deferred |
+| C4 | Printable mission card | C1 | Card previews or prints with route and sources | implemented in integrated baseline |
 
 ### D — Data Acquisition, Preprocessing, Credits
 
@@ -42,7 +42,7 @@ Status values: `planned`, `in progress`, `blocked`, `done`, `deferred`.
 | --- | --- | --- | --- | --- |
 | D0 | Acquire and verify the offline terrain pack | — | Metadata, rasters, textures, and checksums pass | done |
 | D1 | Derive hillshade and slope; register CTX | D0 | Surfaces share the 238×238 AOI | done |
-| D2 | Fetch and cache MSL POV images | D0 | Three local images with captions and credits | deferred |
+| D2 | Fetch and cache MSL POV images | D0 | Three local images with captions and credits | implemented in integrated baseline; attribution retained |
 | D3 | Source notes and attribution | D0 | `SOURCES.md`, UI sources, and docs agree | done |
 | D4 | Full 20 km AOI and MOLA/THEMIS pipeline | D1 | Deferred original pipeline is implemented | deferred |
 
@@ -64,11 +64,22 @@ Status values: `planned`, `in progress`, `blocked`, `done`, `deferred`.
 | S1 | Record a fallback demo video | A3 | Video works without network | pending |
 | S2 | Final submission form, links, and AI disclosure | A4 | Submitted before deadline | pending |
 
+## Local visual upgrade (2026-11-14)
+
+| ID | Scope | Status |
+| --- | --- | --- |
+| B5 | Lit terrain cutaway, 100 m contours, waypoint beacon animation, route flow, camera presets | implemented; local QA recorded in visual-experience.md |
+| C5 | Expedition console, panel navigation, mobile layout, elevation profile and playback | implemented; local QA recorded in visual-experience.md |
+| E5 | Route/profile regression suite and configured walk-back reserve correction | six tests passing locally |
+| B6 | Higher-detail local CTX crop for visor, denser display mesh, detailed illustrative scout rover, and corrected visor geology key | implemented on feature branch; browser, test, offline build, and new asset hashes checked locally |
+| B7 | Progress-driven forward camera, continuous visor scrubber, route guide pulse, and dust/haze polish | implemented on feature branch; final QA and PR review pending |
+| A5 | Review visual integration and merge/deploy | pending A review; no commit/push performed |
+
 ## Critical Path
 
 `A0 → D0 → E1 → A2 → C1 → A3 → A4 → S2`
 
-The offline pack and the A* implementation are complete. The remaining path is final QA, documentation reconciliation, merge/deploy, and submission. POV imagery and the mission card are cut and do not block the critical path.
+The offline pack and the A* implementation are complete. The remaining path is final QA, documentation reconciliation, merge/deploy, and submission. POV imagery and the mission card are implemented in the integrated baseline.
 
 ## Completed Foundation
 

@@ -1,6 +1,6 @@
 # Documentation Index
 
-Last updated: 2026-11-13
+Last updated: 2026-11-14
 
 This directory is the research and evidence source of truth for Odyssey. It records what was verified, what is assumed, and what must not be claimed.
 
@@ -13,6 +13,7 @@ This directory is the research and evidence source of truth for Odyssey. It reco
 | [data-sources.md](data-sources.md) | Source table, attribution, offline pack, and fallback policy | Current |
 | [safety-model.md](safety-model.md) | Radiation, suit, terrain, and warning assumptions | Current |
 | [demo-and-submission.md](demo-and-submission.md) | Demo script, deck outline, and submission checklist | Current |
+| [visual-experience.md](visual-experience.md) | Local expedition-console changes, verification, and remaining review | Current |
 
 ## Current Demo Evidence
 

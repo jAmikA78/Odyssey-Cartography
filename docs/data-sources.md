@@ -1,6 +1,6 @@
 # Data Sources
 
-Last updated: 2026-11-13
+Last updated: 2026-11-14
 
 ## Purpose
 
@@ -15,6 +15,7 @@ Status values: `verified`, `needs verification`, `optional`, `deferred`, `not us
 | Terrain DEM | NASA/JPL-Caltech, MSL Gale Merged DEM (Calef & Parker 2016) via PDS | Local `public/data/gale/data/elevation.f32`; source and subset documented in the pack | 238×238, 19.924 m; 4.72 km across cell centers, 4.74 km edge-to-edge; merged HRSC/CTX/HiRISE/MOLA support varies | verified local file; **20 m screening-resolution** | NASA/JPL-Caltech; Calef & Parker (2016) |
 | Slope raster | Derived locally from the DEM | Local `public/data/gale/data/slope.f32`; `atan(hypot(dz/dx, dz/dsouth))`, one-sided edges | 238×238, degrees; 0.05–50.54° | derived | Odyssey, from the merged DEM |
 | CTX texture | NASA/JPL-Caltech/MSSS via Mars Trek | Local `public/data/gale/data/texture_ctx.jpg` | 466×466 RGB, same AOI; visual context only | verified local export | NASA/JPL-Caltech/MSSS |
+| Visor CTX detail | Caltech Murray Lab Global CTX Mosaic V01 via Esri OnMars/CTX1; source CTX from NASA/JPL-Caltech/MSSS | Local `public/data/gale/data/texture_ctx_detail.jpg`; nine documented source tiles | 932×932, ~5.1 m display spacing, same AOI bounds; visual context only | locally rebuilt from published tiles; separate registration from planning CTX | Esri, Caltech Murray Lab, NASA, JPL, MSSS |
 | Hillshade | Derived locally from the DEM | Local `public/data/gale/data/hillshade.png` | 238×238, azimuth 315°, altitude 45° | derived | Odyssey, from the merged DEM |
 | Slope preview | Derived locally from the DEM | Local `public/data/gale/data/slope_preview.png` | 238×238, display clamp 0–45° | derived | Odyssey, from the merged DEM |
 | Waypoints | Odyssey demo data | Local `public/data/gale/data/example_route.geojson` | Five synthetic points; not rover telemetry | synthetic | Odyssey |
@@ -23,14 +24,21 @@ Status values: `verified`, `needs verification`, `optional`, `deferred`, `not us
 
 The runtime does not fetch any of these from the network. The pack's `SOURCES.md` and `checksums.sha256` are the local provenance record.
 
+## Additional integrated local assets
+
+- **CRISM:** 21 MTRDR indices from observation FRT000058A3. The local `minerals.json` and pack `SOURCES.md` document registration, provenance, and the measured/gap-filled mask. These are candidate signatures, not abundances.
+- **Geology:** `geology.geojson` contains Htu, “Hesperian transition undivided unit,” from USGS SIM 3292; regional context only. No period is invented when the pack omits it.
+- **Curiosity gallery:** local PIA19039, PIA21041, and PIA23137 files under `public/pov/`; existing captions, credits, and NASA Photojournal links remain in `PovGallery.tsx`. Their provenance was not independently revalidated during this visual pass.
+- **Presentation:** contours and profile derive from the existing DEM. Cutaway, lighting, waypoint beacons, and route animation add no scientific dataset. No new remote media was introduced.
+
 ## Deferred / Not Used Sources
 
 | Layer / Use | Provider | Access | Notes | Status |
 | --- | --- | --- | --- | --- |
 | MOLA hillshade / DEM | NASA/MGS/MOLA | Mars Trek WMTS and ImageServer | Original 463 m context layer; not in the 20 m demo pack | deferred |
 | THEMIS day/night | NASA/JPL/Arizona State University | Mars Trek WMTS | Thermal context only; not a route input | deferred |
-| USGS global geology | USGS Astrogeology | <https://tiles.arcgis.com/tiles/nzS0F0zdNLvs7nc8/arcgis/rest/services/Mars_geology_All_layers_100pct/MapServer> | Coarse global layer; effective max LOD around 6 | deferred |
-| MSL/Curiosity images | NASA/JPL-Caltech/MSSS | <https://mars.nasa.gov/rss/api/?feed=raw_images&category=msl&feedtype=json> | POV modal was cut; any future use must be Gale/Curiosity | deferred |
+| Live USGS map service | USGS Astrogeology | See local pack provenance | Runtime uses the local clipped GeoJSON instead | not fetched |
+| MSL/Curiosity images | NASA/JPL-Caltech/MSSS | <https://mars.nasa.gov/rss/api/?feed=raw_images&category=msl&feedtype=json> | Local gallery is implemented; no API fetch at runtime | local cached images |
 | MSL RAD archive | NASA/JPL-Caltech | <https://pds-ppi.igpp.ucla.edu/data/MSL-M-RAD-3-RDR-V1.0/> | Radiation reference archive; baseline dose rate still needs a specific citation | archived; value needs verification |
 | NOAA planetary K index | NOAA SWPC | <https://services.swpc.noaa.gov/json/planetary_k_index_1m.json> | Earth space-weather context only, not a Mars surface dose predictor | deferred |
 | Viking context | NASA/USGS | Mars Trek WMTS | Optional historical context | not used |

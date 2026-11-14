@@ -29,7 +29,7 @@ export function SafetyPanel({ safety, route, config }: SafetyPanelProps) {
         <p className="panel-empty">No route to evaluate yet.</p>
       ) : (
         <>
-          <div className={`status-row status-${safety.status}`}>
+          <div className={`status-row status-${safety.status === "normal" ? "ok" : safety.status}`}>
             <span className="status-dot" /> {STATUS_LABEL[safety.status]}
           </div>
 
