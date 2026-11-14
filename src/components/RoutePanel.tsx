@@ -24,6 +24,7 @@ interface RoutePanelProps {
   onShowRouteChange: (value: boolean) => void;
   onUseDemo: () => void;
   onClear: () => void;
+  hideStats?: boolean;
 }
 
 export function RoutePanel({
@@ -42,6 +43,7 @@ export function RoutePanel({
   walkProgress,
   onToggleWalk,
   onRestartWalk,
+  hideStats = false,
 }: RoutePanelProps) {
   return (
     <section className="panel" aria-labelledby="route-panel-title">
@@ -142,6 +144,7 @@ export function RoutePanel({
               {" "}· traveled path turns gold
             </p>
           </div>
+          {!hideStats ? (
           <dl className="stat-grid">
             <div>
               <dt>Distance</dt>
@@ -176,6 +179,7 @@ export function RoutePanel({
               <dd>{route.path.length}</dd>
             </div>
           </dl>
+          ) : null}
           {route.warnings.length > 0 ? (
             <ul className="warning-list">
               {route.warnings.map((warning) => (
