@@ -706,3 +706,16 @@ a:focus-visible,
     flex: 1;
   }
 }
+
+.control-block select {
+  width: 100%;
+  padding: 0.35rem 0.4rem;
+  border-radius: 6px;
+  border: 1px solid var(--panel-border);
+  background: var(--panel-raised);
+  color: var(--text);
+}
+
+.control-block label input[type="checkbox"] {
+  accent-color: var(--accent);
+}

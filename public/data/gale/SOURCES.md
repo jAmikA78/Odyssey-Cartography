@@ -28,3 +28,10 @@ https://unpkg.com/three@0.128.0/build/three.min.js
 https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js
 https://unpkg.com/three@0.128.0/LICENSE
 Viewer glue code and synthetic route are prototype examples prepared for this starter pack. They are not NASA mission software.
+
+## Mineral / spectral indices (added in this kit)
+NASA/Johns Hopkins APL CRISM instrument on MRO. Map-Projected Targeted Reduced Data Record (MTRDR), observation FRT000058A3 (acquired 2007-04-22, solar longitude 223.9, orbit 3453), summary-product cube frt000058a3_07_sr165j_mtr3.img, 18 m/pixel, PDS Geosciences Node dataset MRO-M-CRISM-5-RDR-MPTARGETED-V1.0. 21 of 60 standard summary parameters extracted for this patch and resampled to the pack grid. Exact product directory (large files; only byte-ranges of selected bands were downloaded):
+https://pds-geosciences.wustl.edu/mro/mro-m-crism-5-rdr-mptargeted-v1/mrocr_4001/mtrdr/2007/2007_112/frt000058a3/
+Summary parameter definitions: Viviano-Beck, C.E. et al., 2014, Revised CRISM spectral parameters and summary products based on the currently detected mineral diversity on Mars, JGR Planets 119(6), doi:10.1002/2014JE004627.
+Product discovered and footprint-verified through NASA PDS Orbital Data Explorer (ODE) REST: https://oderest.rsl.wustl.edu/ (bbox query over the patch, 7 MTRDRs intersect; this observation chosen for full footprint coverage at full 18 m resolution). Footprint coverage is not valid-data coverage: at the albedo-corrected registration the strip's valid-data edge leaves 1,592 west/southwest patch cells (2.81%) outside the image; those cells are gap-filled from nearest measured values and marked in data/minerals/minerals_mask.f32 (1 = measured, 0 = filled).
+Registration note: the MTRDR label corner was found ~0.68 km off from its own image content (2007-era map control); the layer was co-registered to the Gale CTX mosaic by albedo correlation and the correction is documented in metadata.json. Verify against a second observation before any science claim.

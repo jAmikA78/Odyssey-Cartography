@@ -153,3 +153,31 @@ export interface TerrainPick {
   row: number;
   col: number;
 }
+
+export interface MineralBandMeta {
+  title: string;
+  description: string;
+  units: string;
+  file_f32: string;
+  file_png: string;
+  patch_min: number;
+  patch_max: number;
+  png_stretch: [number, number];
+  coverage_pct: number;
+}
+
+export interface MineralsCatalog {
+  crs: string;
+  grid: string;
+  source_observation: string;
+  source_url: string;
+  citation: string;
+  warning: string;
+  bands: Record<string, MineralBandMeta>;
+}
+
+export interface GeologyUnit {
+  unit: string;
+  unitdesc: string;
+  note: string;
+}
